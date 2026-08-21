@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import ChangePasswordModal from "../../components/ChangePasswordModal";
 
 const links = [
   {
@@ -33,6 +34,7 @@ export default function PatientLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
 
   const handleLogout = () => { logout(); navigate("/login", { replace: true }); };
 
@@ -56,17 +58,20 @@ export default function PatientLayout() {
       </div>
 
       {/* User card */}
-      <div className="mx-4 mb-4 rounded-2xl bg-white/10 border border-white/20 px-4 py-3">
+      <button
+        onClick={() => setShowChangePw(true)}
+        className="mx-4 mb-4 rounded-2xl bg-white/10 border border-white/20 px-4 py-3 text-left hover:bg-white/20 transition-colors w-[calc(100%-2rem)]"
+      >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-300 to-cyan-400 flex items-center justify-center text-teal-900 text-sm font-bold shadow-sm">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-300 to-cyan-400 flex items-center justify-center text-teal-900 text-sm font-bold shadow-sm shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-            <p className="text-xs text-teal-300 truncate">{user.email}</p>
+            <p className="text-xs text-teal-300 truncate">Change password</p>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-1">
@@ -139,6 +144,10 @@ export default function PatientLayout() {
           <Outlet />
         </main>
       </div>
+
+      {showChangePw && (
+        <ChangePasswordModal accentColor="teal" onClose={() => setShowChangePw(false)} />
+      )}
     </div>
   );
 }

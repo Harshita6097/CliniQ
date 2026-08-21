@@ -9,7 +9,7 @@ const today = format(new Date(), "yyyy-MM-dd");
 export default function LeaveManager() {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState("");
-  const [pendingDates, setPending]      = useState([]); // staged before submit
+  const [pendingDates, setPending]      = useState([]);
   const [conflictInfo, setConflictInfo] = useState(null);
 
   const { data: profile, isLoading } = useQuery({
@@ -44,64 +44,67 @@ export default function LeaveManager() {
 
   const stageDate = () => {
     if (!selectedDate) return;
-    if (pendingDates.includes(selectedDate)) {
-      toast.error("Date already staged."); return;
-    }
-    if (profile?.leaveDays?.includes(selectedDate)) {
-      toast.error("Already a leave day."); return;
-    }
-    setPending((p) => [...p, selectedDate].sort());
+    if (pendingDates.includes(selectedDate)) { toast.error("Date already staged."); return; }
+    if (profile?.leaveDays?.includes(selectedDate)) { toast.error("Already a leave day."); return; }
+    setPending(p => [...p, selectedDate].sort());
     setSelectedDate("");
   };
 
-  const unstageDate = (d) => setPending((p) => p.filter((x) => x !== d));
-
-  if (isLoading) return <p className="text-sm text-gray-400">Loading…</p>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   const leaveDays = [...(profile?.leaveDays ?? [])].sort();
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-2xl font-bold text-gray-800 mb-1">Leave Manager</h1>
-      <p className="text-sm text-gray-500 mb-8">
-        Mark days off. Any confirmed appointments on those days will be automatically cancelled and patients notified.
-      </p>
+    <div className="max-w-xl space-y-6 animate-fadeIn">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Leave Manager</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          Mark days off — confirmed appointments on those days will be cancelled and patients notified.
+        </p>
+      </div>
 
-      {/* Add leave */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Add Leave Days</h2>
+      {/* Add leave card */}
+      <div className="bg-white rounded-3xl border border-indigo-100 shadow-md p-6 space-y-5">
+        <div className="flex items-center gap-2 pb-4 border-b border-indigo-50">
+          <span className="text-lg">📅</span>
+          <h2 className="text-sm font-bold text-gray-800">Add Leave Days</h2>
+        </div>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-3">
           <input
             type="date"
             value={selectedDate}
             min={today}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-gray-50 focus:bg-white transition-colors"
           />
           <button
             onClick={stageDate}
             disabled={!selectedDate}
-            className="rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 text-sm font-medium px-4 py-2 transition-colors"
+            className="rounded-xl bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 font-semibold text-sm px-5 py-2.5 transition-colors border border-indigo-200"
           >
             Stage
           </button>
         </div>
 
-        {/* Staged dates */}
+        {/* Staged chips */}
         {pendingDates.length > 0 && (
-          <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-2">Staged (not yet saved):</p>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Staged (not yet saved)</p>
             <div className="flex flex-wrap gap-2">
               {pendingDates.map((d) => (
                 <span
                   key={d}
-                  className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-medium px-3 py-1 rounded-full"
+                  className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full"
                 >
-                  {d}
+                  {format(new Date(d), "dd MMM yyyy")}
                   <button
-                    onClick={() => unstageDate(d)}
-                    className="text-green-500 hover:text-green-700 font-bold leading-none"
+                    onClick={() => setPending(p => p.filter(x => x !== d))}
+                    className="text-indigo-400 hover:text-indigo-700 font-bold leading-none ml-0.5"
                   >
                     ×
                   </button>
@@ -114,28 +117,30 @@ export default function LeaveManager() {
         <button
           onClick={() => addLeave(pendingDates)}
           disabled={pendingDates.length === 0 || adding}
-          className="rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 transition-colors"
+          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 text-white font-semibold text-sm py-3 transition-all duration-150 shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5"
         >
-          {adding ? "Saving…" : `Save ${pendingDates.length > 0 ? `(${pendingDates.length})` : ""} Leave Days`}
+          {adding ? "Saving…" : `Save ${pendingDates.length > 0 ? `${pendingDates.length} ` : ""}Leave Day${pendingDates.length !== 1 ? "s" : ""}`}
         </button>
       </div>
 
-      {/* Conflict info */}
+      {/* Conflict warning */}
       {conflictInfo && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <p className="text-sm font-medium text-amber-800 mb-2">
-            The following appointments were cancelled:
-          </p>
-          <ul className="space-y-1">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">⚠️</span>
+            <p className="text-sm font-bold text-amber-800">Appointments cancelled due to leave</p>
+          </div>
+          <ul className="space-y-1.5 mb-4">
             {conflictInfo.map((a) => (
-              <li key={a.id} className="text-xs text-amber-700">
-                • {a.patientName} — {format(new Date(a.slotStart), "dd MMM yyyy, hh:mm a")}
+              <li key={a.id} className="flex items-center gap-2 text-xs text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                {a.patientName} — {format(new Date(a.slotStart), "dd MMM yyyy, hh:mm a")}
               </li>
             ))}
           </ul>
           <button
             onClick={() => setConflictInfo(null)}
-            className="mt-3 text-xs text-amber-600 hover:underline"
+            className="text-xs font-medium text-amber-600 hover:text-amber-700 hover:underline"
           >
             Dismiss
           </button>
@@ -143,19 +148,39 @@ export default function LeaveManager() {
       )}
 
       {/* Current leave days */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Current Leave Days</h2>
+      <div className="bg-white rounded-3xl border border-indigo-100 shadow-md p-6">
+        <div className="flex items-center gap-2 pb-4 border-b border-indigo-50 mb-4">
+          <span className="text-lg">🗓️</span>
+          <h2 className="text-sm font-bold text-gray-800">Scheduled Leave Days</h2>
+          {leaveDays.length > 0 && (
+            <span className="ml-auto text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full">
+              {leaveDays.length}
+            </span>
+          )}
+        </div>
+
         {leaveDays.length === 0 ? (
-          <p className="text-sm text-gray-400">No leave days scheduled.</p>
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">✅</div>
+            <p className="text-sm text-gray-500 font-medium">No leave days scheduled</p>
+            <p className="text-xs text-gray-400 mt-1">You're available every day</p>
+          </div>
         ) : (
           <ul className="space-y-2">
             {leaveDays.map((d) => (
-              <li key={d} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{format(new Date(d), "dd MMM yyyy (EEEE)")}</span>
+              <li key={d} className="flex items-center justify-between bg-indigo-50/50 rounded-xl px-4 py-3 border border-indigo-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold">
+                    {format(new Date(d), "dd")}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {format(new Date(d), "MMMM yyyy (EEEE)")}
+                  </span>
+                </div>
                 <button
                   onClick={() => deleteLeave([d])}
                   disabled={removing}
-                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                  className="text-xs font-medium text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                 >
                   Remove
                 </button>
