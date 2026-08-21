@@ -14,6 +14,10 @@ try { llmService = require("../services/llm.service"); } catch (_) {}
 let notificationService;
 try { notificationService = require("../services/notification.service"); } catch (_) {}
 
+// Calendar service — same pattern
+let calendarService;
+try { calendarService = require("../services/calendar.service"); } catch (_) {}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 exports.holdValidation = [
@@ -122,6 +126,20 @@ exports.confirmAppointment = async (req, res, next) => {
       );
     }
 
+    // Create Google Calendar events for both patient and doctor (non-blocking)
+    if (calendarService) {
+      calendarService.createCalendarEvents(appointment)
+        .then(({ patient, doctor }) => {
+          if (patient || doctor) {
+            return require("../models/Appointment").findByIdAndUpdate(appointment._id, {
+              "calendarEventId.patient": patient,
+              "calendarEventId.doctor":  doctor,
+            });
+          }
+        })
+        .catch((e) => logger.error(`Failed to create calendar events: ${e.message}`));
+    }
+
     res.status(200).json({ message: "Appointment confirmed.", appointment });
   } catch (err) {
     next(err);
@@ -144,6 +162,12 @@ exports.cancelAppointmentHandler = async (req, res, next) => {
       notificationService.queueCancellationNotification(appointment).catch((e) =>
         logger.error(`Failed to queue cancellation notification: ${e.message}`)
       );
+    }
+
+    // Delete Google Calendar events (non-blocking)
+    if (calendarService) {
+      calendarService.deleteCalendarEvents(appointment)
+        .catch((e) => logger.error(`Failed to delete calendar events: ${e.message}`));
     }
 
     res.status(200).json({ message: "Appointment cancelled.", appointment });
