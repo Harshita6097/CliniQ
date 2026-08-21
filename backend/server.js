@@ -8,6 +8,11 @@ const connectDB = require("./src/config/db");
 const errorHandler = require("./src/middleware/errorHandler.middleware");
 const logger = require("./src/utils/logger");
 
+// ─── Background Jobs ───────────────────────────────────────────────────────────
+const holdCleanupJob       = require("./src/jobs/holdCleanup.job");
+const notificationRetryJob = require("./src/jobs/notificationRetry.job");
+const medicationReminderJob = require("./src/jobs/medicationReminder.job");
+
 const app = express();
 
 // ─── Connect Database ──────────────────────────────────────────────────────────
@@ -64,6 +69,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`);
+
+  // Start background jobs after server is listening
+  holdCleanupJob.start();
+  notificationRetryJob.start();
+  medicationReminderJob.start();
 });
 
 module.exports = app; // exported for testing
