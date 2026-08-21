@@ -3,10 +3,16 @@ const logger = require("../utils/logger");
 // Centralised error handler — must be registered LAST in Express middleware chain
 const errorHandler = (err, req, res, next) => {
   // Mongoose duplicate key (e.g. unique index violation on slot hold)
-  if (err.code === 11000) {
+  if (err.code === 11000 || err.code === "11000") {
     const field = Object.keys(err.keyValue || {}).join(", ");
     logger.warn(`Duplicate key error on [${field}]: ${JSON.stringify(err.keyValue)}`);
-    return res.status(409).json({ message: "Slot no longer available. Please select another slot." });
+    // Only return slot message for appointment index; generic message for other collections
+    const isSlotConflict = field.includes("slotStart") || field.includes("doctorId");
+    return res.status(409).json({
+      message: isSlotConflict
+        ? "Slot no longer available. Please select another slot."
+        : "A record with this value already exists.",
+    });
   }
 
   // Mongoose validation error

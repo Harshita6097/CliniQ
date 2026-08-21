@@ -50,11 +50,8 @@ exports.register = async (req, res, next) => {
 
     const { name, email, password, role, phone } = req.body;
 
-    const existing = await User.findOne({ email });
-    if (existing)
-      return res.status(409).json({ message: "Email already registered." });
-
     // passwordHash field triggers the bcrypt pre-save hook in User model
+    // No manual duplicate check needed — unique index on email + errorHandler handles 11000
     const user = await User.create({ name, email, passwordHash: password, role, phone });
 
     logger.info(`New user registered: ${user.email} [${user.role}]`);
@@ -103,11 +100,19 @@ exports.getMe = async (req, res, next) => {
 exports.updateMe = async (req, res, next) => {
   try {
     const { name, phone } = req.body;
+    if (!name && !phone)
+      return res.status(400).json({ message: "Provide at least one field to update: name or phone." });
+
+    const updates = {};
+    if (name)  updates.name  = name;
+    if (phone) updates.phone = phone;
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, phone },
+      updates,
       { new: true, runValidators: true }
     );
+    if (!user) return res.status(404).json({ message: "User not found." });
     logger.info(`User profile updated: ${user.email}`);
     res.status(200).json({ user });
   } catch (err) {

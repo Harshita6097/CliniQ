@@ -250,13 +250,12 @@ exports.adminMarkLeave = async (req, res, next) => {
     if (!profile)
       return res.status(404).json({ message: "Doctor profile not found." });
 
-    profile.leaveDays = [...new Set([...profile.leaveDays, ...dates])];
-    await profile.save();
-
     const session = await mongoose.startSession();
     session.startTransaction();
     let affected = [];
     try {
+      profile.leaveDays = [...new Set([...profile.leaveDays, ...dates])];
+      await profile.save({ session });
       affected = await cancelAppointmentsOnLeave(doctorId, dates, req.user.id, session);
       await session.commitTransaction();
     } catch (err) {

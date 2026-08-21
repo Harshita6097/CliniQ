@@ -115,7 +115,7 @@ exports.submitNotes = async (req, res, next) => {
     session.startTransaction();
     try {
       appointment.postVisitNotes = postVisitNotes;
-      appointment.prescription = prescription;
+      appointment.prescription   = prescription;
       appointment.postVisitSummary = postVisitSummary;
       appointment.status = "completed";
       await appointment.save({ session });
@@ -146,6 +146,13 @@ exports.submitNotes = async (req, res, next) => {
       notificationService
         .queueMedicationReminders(appointment)
         .catch((e) => logger.error(`Failed to queue medication reminders: ${e.message}`));
+    }
+
+    // Update Google Calendar events to reflect completed status (non-blocking)
+    if (calendarService) {
+      calendarService
+        .updateCalendarEvents(appointment)
+        .catch((e) => logger.error(`Failed to update calendar events after notes: ${e.message}`));
     }
 
     res.status(200).json({ message: "Notes submitted successfully.", appointment });
@@ -194,10 +201,6 @@ exports.markLeave = async (req, res, next) => {
     logger.info(`Doctor ${doctorId} marked leave for: ${dates.join(", ")}`);
 
     // ── Conflict handling ──────────────────────────────────────────────────────
-    // Find all confirmed appointments on the leave days
-    const dayStarts = dates.map((d) => new Date(`${d}T00:00:00.000Z`));
-    const dayEnds   = dates.map((d) => new Date(`${d}T23:59:59.999Z`));
-
     // Build $or query for each leave date range
     const dateRanges = dates.map((d) => ({
       slotStart: {

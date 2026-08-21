@@ -124,19 +124,28 @@ const cancelAppointment = async (appointmentId, patientId, reason = "Cancelled b
   session.startTransaction();
 
   try {
-    const appointment = await Appointment.findOneAndUpdate(
+    // Fetch first to capture the pre-cancel status, then update
+    const existing = await Appointment.findOne(
       { _id: appointmentId, patientId, status: { $in: ["held", "confirmed"] } },
-      { status: "cancelled", cancellationReason: reason },
-      { new: true, session }
+      null,
+      { session }
     );
 
-    if (!appointment) {
+    if (!existing) {
       await session.abortTransaction();
       throw Object.assign(new Error("Appointment not found or cannot be cancelled."), { statusCode: 404 });
     }
 
+    const fromStatus = existing.status; // captured before update
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { status: "cancelled", cancellationReason: reason },
+      { new: true, session }
+    );
+
     await AppointmentStatusHistory.create(
-      [{ appointmentId, fromStatus: "confirmed", toStatus: "cancelled", reason, changedBy: patientId }],
+      [{ appointmentId, fromStatus, toStatus: "cancelled", reason, changedBy: patientId }],
       { session }
     );
 
