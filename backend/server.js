@@ -46,7 +46,7 @@ app.get("/health", (_req, res) => {
 });
 
 // ─── API Routes (mounted as tasks are completed) ──────────────────────────────
-// app.use("/api/auth",     require("./src/routes/auth.routes"));       // Task 4
+app.use("/api/auth",     require("./src/routes/auth.routes"));
 // app.use("/api/patient",  require("./src/routes/patient.routes"));    // Task 5
 // app.use("/api/doctor",   require("./src/routes/doctor.routes"));     // Task 6
 // app.use("/api/admin",    require("./src/routes/admin.routes"));      // Task 7
