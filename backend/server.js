@@ -49,7 +49,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth",     require("./src/routes/auth.routes"));
 app.use("/api/patient",  require("./src/routes/patient.routes"));
 app.use("/api/doctor",   require("./src/routes/doctor.routes"));
-// app.use("/api/admin",    require("./src/routes/admin.routes"));      // Task 7
+app.use("/api/admin",    require("./src/routes/admin.routes"));
 // app.use("/api/calendar", require("./src/routes/calendar.routes"));   // Task 10
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
