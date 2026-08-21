@@ -3,23 +3,414 @@
 > Full-stack healthcare appointment platform with patient, doctor, and admin portals.
 
 ## Tech Stack
-- **Frontend:** React + TailwindCSS
-- **Backend:** Node.js + Express
-- **Database:** MongoDB Atlas
-- **Auth:** JWT (role-based: patient / doctor / admin)
-- **LLM:** Groq API
-- **Email:** Nodemailer
-- **Calendar:** Google Calendar API
-- **Jobs:** node-cron
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TailwindCSS + React Router v6 + TanStack Query |
+| Backend | Node.js + Express |
+| Database | MongoDB Atlas (Mongoose) |
+| Auth | JWT — role-based (patient / doctor / admin) |
+| LLM | Groq API (llama3-8b-8192) |
+| Email | Nodemailer (SMTP / Gmail) |
+| Calendar | Google Calendar API (OAuth 2.0 per-user) |
+| Background Jobs | node-cron (hold cleanup, notification retry, reminders) |
+
+---
 
 ## Project Structure
+
 ```
 healthcare-appointment-system/
-├── backend/       # Express API server
-├── frontend/      # React application
-├── docs/          # System design, API docs, sequence diagrams
-└── scripts/       # Utility scripts (concurrency test etc.)
+├── backend/
+│   ├── scripts/          # seed.js — first admin + sample doctor
+│   ├── src/
+│   │   ├── config/       # db.js, googleOAuth.js
+│   │   ├── controllers/  # auth, appointment, doctor, admin
+│   │   ├── jobs/         # holdCleanup, notificationRetry, medicationReminder
+│   │   ├── middleware/   # auth.middleware, errorHandler.middleware
+│   │   ├── models/       # User, DoctorProfile, Appointment, AppointmentStatusHistory, Notification
+│   │   ├── routes/       # auth, patient, doctor, admin, calendar
+│   │   ├── services/     # slot, llm, email, notification, calendar
+│   │   └── utils/        # logger, slotGenerator
+│   ├── .env.example
+│   └── server.js
+├── frontend/
+│   ├── src/
+│   │   ├── api/          # axiosInstance, auth.api, appointment.api, doctor.api, admin.api
+│   │   ├── context/      # AuthContext
+│   │   ├── hooks/        # useAuth, useAppointments, useSlots
+│   │   ├── pages/
+│   │   │   ├── auth/     # Login, Register
+│   │   │   ├── patient/  # PatientLayout, Dashboard, BookAppointment, MyAppointments, AppointmentDetail
+│   │   │   ├── doctor/   # DoctorLayout, Dashboard, AppointmentDetail, LeaveManager
+│   │   │   └── admin/    # AdminLayout, Dashboard, ManageDoctors, AllAppointments
+│   │   └── utils/        # dateUtils, statusBadge
+│   └── .env.example
+└── README.md
 ```
 
-## Setup, API Docs, DB Schema, LLM Prompts, Calendar Setup
-<!-- Will be completed in Task 18 -->
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas cluster (free tier works)
+- Groq API key — [console.groq.com](https://console.groq.com)
+- Gmail account with an App Password (for Nodemailer)
+- Google Cloud project with Calendar API enabled (optional — app works without it)
+
+---
+
+### 1. Clone & install
+
+```bash
+git clone <repo-url>
+cd healthcare-appointment-system
+
+# Backend
+cd backend && npm install
+
+# Frontend
+cd ../frontend && npm install
+```
+
+---
+
+### 2. Backend environment
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Fill in every value — see the [Environment Variables](#environment-variables) section below.
+
+---
+
+### 3. Seed the database
+
+Creates the first admin account and a sample doctor. Safe to run multiple times (idempotent).
+
+```bash
+cd backend
+npm run seed
+```
+
+Default credentials created:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@healthcare.local | Admin@1234 |
+| Doctor | doctor@healthcare.local | Doctor@1234 |
+
+Override defaults:
+
+```bash
+node scripts/seed.js --admin-email=you@example.com --admin-password=MySecret99
+node scripts/seed.js --skip-doctor   # skip sample doctor
+```
+
+**Change these passwords immediately after first login.**
+
+---
+
+### 4. Run the app
+
+```bash
+# Terminal 1 — backend (http://localhost:5000)
+cd backend && npm run dev
+
+# Terminal 2 — frontend (http://localhost:3000)
+cd frontend && npm start
+```
+
+Health check: `GET http://localhost:5000/health`
+
+---
+
+## Environment Variables
+
+All variables live in `backend/.env`. Copy from `backend/.env.example`.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Server port (default `5000`) |
+| `NODE_ENV` | No | `development` or `production` |
+| `MONGO_URI` | **Yes** | MongoDB Atlas connection string |
+| `JWT_SECRET` | **Yes** | Min 32-character random string |
+| `JWT_EXPIRES_IN` | No | Token lifetime (default `7d`) |
+| `GROQ_API_KEY` | No* | Groq API key — LLM summaries fall back gracefully if missing |
+| `GROQ_MODEL` | No | Model name (default `llama3-8b-8192`) |
+| `LLM_TIMEOUT_MS` | No | LLM call timeout in ms (default `10000`) |
+| `SMTP_HOST` | No* | SMTP host — emails silently fail if missing |
+| `SMTP_PORT` | No | SMTP port (default `587`) |
+| `SMTP_USER` | No* | SMTP username / Gmail address |
+| `SMTP_PASS` | No* | Gmail App Password |
+| `EMAIL_FROM` | No | From display name + address |
+| `GOOGLE_CLIENT_ID` | No* | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | No* | Google OAuth client secret |
+| `GOOGLE_REDIRECT_URI` | No | OAuth callback URL (default `http://localhost:5000/api/calendar/oauth/callback`) |
+| `CLIENT_URL` | No | Frontend URL for CORS + OAuth redirects (default `http://localhost:3000`) |
+| `HOLD_DURATION_MINUTES` | No | Slot hold window in minutes (default `5`) |
+| `MAX_NOTIFICATION_RETRIES` | No | Max email retry attempts (default `5`) |
+
+*App runs without these — the relevant feature degrades gracefully.
+
+---
+
+## API Reference
+
+All endpoints are prefixed with `/api`. Protected routes require:
+```
+Authorization: Bearer <jwt_token>
+```
+
+---
+
+### Auth — `/api/auth`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/register` | Public | Register a patient account |
+| POST | `/login` | Public | Login — returns JWT + user |
+| GET | `/me` | Any role | Get current user profile |
+| PATCH | `/me` | Any role | Update name / phone |
+| POST | `/change-password` | Any role | Change password |
+
+**POST /register**
+```json
+{ "name": "Jane Doe", "email": "jane@example.com", "password": "secret123", "role": "patient", "phone": "+91 98765 43210" }
+```
+
+**POST /login**
+```json
+{ "email": "jane@example.com", "password": "secret123" }
+```
+Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
+
+---
+
+### Patient — `/api/patient` *(role: patient)*
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/doctors` | List doctors, optional `?specialization=` filter |
+| GET | `/doctors/:doctorId/slots` | Available slots — requires `?date=YYYY-MM-DD` |
+| POST | `/appointments/hold` | Step 1 — hold a slot (5-min window) |
+| POST | `/appointments/:id/confirm` | Step 2 — submit symptoms, confirm booking |
+| DELETE | `/appointments/:id` | Cancel an appointment |
+| GET | `/appointments` | List own appointments, optional `?status=` filter |
+| GET | `/appointments/:id` | Single appointment detail + status history |
+
+**POST /appointments/hold**
+```json
+{ "doctorId": "<id>", "slotStart": "2025-09-01T09:00:00.000Z", "slotEnd": "2025-09-01T09:30:00.000Z" }
+```
+
+**POST /appointments/:id/confirm**
+```json
+{ "symptomFormText": "Fever for 3 days, headache, mild cough." }
+```
+
+---
+
+### Doctor — `/api/doctor` *(role: doctor)*
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/profile` | Own doctor profile |
+| GET | `/appointments` | All appointments, optional `?status=` filter |
+| GET | `/appointments/:id` | Single appointment + patient info + history |
+| POST | `/appointments/:id/notes` | Submit post-visit notes + prescription → marks completed |
+| POST | `/leave` | Mark leave days (cancels conflicting appointments) |
+| DELETE | `/leave` | Remove leave days |
+
+**POST /appointments/:id/notes**
+```json
+{
+  "postVisitNotes": "Patient has viral fever. Rest advised.",
+  "prescription": [
+    { "medicine": "Paracetamol", "dosage": "500mg", "frequency": "Twice daily", "durationDays": 5, "notes": "After meals" }
+  ]
+}
+```
+
+**POST /leave**
+```json
+{ "dates": ["2025-09-10", "2025-09-11"] }
+```
+
+---
+
+### Admin — `/api/admin` *(role: admin)*
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/doctors` | Create doctor account + profile (atomic) |
+| GET | `/doctors` | List all doctors |
+| GET | `/doctors/:id` | Single doctor profile |
+| PATCH | `/doctors/:id` | Update doctor profile fields |
+| DELETE | `/doctors/:id` | Deactivate doctor (soft delete) |
+| POST | `/doctors/:id/leave` | Mark leave for a doctor |
+| GET | `/appointments` | System-wide appointments — filters: `status`, `doctorId`, `patientId`, `from`, `to` |
+| GET | `/notifications` | Notification dashboard — optional `?status=queued\|sent\|failed` |
+| GET | `/users` | All users — optional `?role=patient\|doctor` |
+| PATCH | `/users/:id/toggle-active` | Activate / deactivate any user |
+
+**POST /doctors**
+```json
+{
+  "name": "Dr. Smith", "email": "smith@example.com", "password": "secret123",
+  "specialization": "Cardiology", "slotDurationMins": 30, "consultationFee": 800,
+  "workingHours": [
+    { "day": "Monday", "start": "09:00", "end": "17:00" },
+    { "day": "Wednesday", "start": "10:00", "end": "15:00" }
+  ]
+}
+```
+
+---
+
+### Calendar — `/api/calendar`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/connect` | Any role | Returns Google OAuth consent URL |
+| GET | `/oauth/callback` | Public | OAuth redirect handler — saves tokens |
+| DELETE | `/disconnect` | Any role | Remove stored Google tokens |
+| GET | `/status` | Any role | `{ "connected": true/false }` |
+
+---
+
+## Database Schema
+
+### User
+| Field | Type | Notes |
+|-------|------|-------|
+| `_id` | ObjectId | |
+| `name` | String | required |
+| `email` | String | unique, lowercase |
+| `passwordHash` | String | bcrypt, `select: false` |
+| `role` | String | `patient` \| `doctor` \| `admin` |
+| `phone` | String | optional |
+| `googleTokens` | Object | `access_token`, `refresh_token`, `expiry_date` |
+| `isActive` | Boolean | default `true` — soft delete flag |
+| `createdAt` / `updatedAt` | Date | auto |
+
+### DoctorProfile
+| Field | Type | Notes |
+|-------|------|-------|
+| `_id` | ObjectId | |
+| `userId` | ObjectId → User | unique |
+| `specialization` | String | indexed |
+| `qualifications` | String | optional |
+| `bio` | String | optional |
+| `workingHours` | Array | `[{ day, start "HH:mm", end "HH:mm" }]` |
+| `slotDurationMins` | Number | min 5, default 30 |
+| `leaveDays` | Array[String] | `["YYYY-MM-DD", ...]` |
+| `consultationFee` | Number | default 0 |
+
+### Appointment
+| Field | Type | Notes |
+|-------|------|-------|
+| `_id` | ObjectId | |
+| `patientId` | ObjectId → User | |
+| `doctorId` | ObjectId → User | |
+| `slotStart` / `slotEnd` | Date | UTC |
+| `status` | String | `held` \| `confirmed` \| `cancelled` \| `completed` |
+| `holdExpiresAt` | Date | null after confirmation |
+| `symptomFormText` | String | patient-submitted |
+| `preVisitSummary` | Object | `{ urgency, chiefComplaint, suggestedQuestions[], generatedAt, isFallback }` |
+| `postVisitNotes` | String | doctor-submitted |
+| `postVisitSummary` | Object | `{ patientFriendlySummary, generatedAt, isFallback }` |
+| `prescription` | Array | `[{ medicine, dosage, frequency, durationDays, notes }]` |
+| `calendarEventId` | Object | `{ patient, doctor }` — Google Calendar event IDs |
+| `cancellationReason` | String | optional |
+
+**Critical index:** Partial unique index on `(doctorId, slotStart)` where `status IN [held, confirmed]` — DB-level double-booking prevention.
+
+### AppointmentStatusHistory
+| Field | Type | Notes |
+|-------|------|-------|
+| `appointmentId` | ObjectId → Appointment | |
+| `fromStatus` | String \| null | null for initial creation |
+| `toStatus` | String | |
+| `reason` | String | human-readable |
+| `changedBy` | ObjectId → User \| null | null = system (cron job) |
+| `timestamp` | Date | write-once, auto |
+
+### Notification
+| Field | Type | Notes |
+|-------|------|-------|
+| `type` | String | `confirmation` \| `reminder` \| `cancellation` \| `medication_reminder` |
+| `recipientId` | ObjectId → User | |
+| `appointmentId` | ObjectId → Appointment | |
+| `status` | String | `queued` \| `sent` \| `failed` |
+| `retryCount` | Number | incremented on each failure |
+| `nextRetryAt` | Date | exponential backoff: 1m, 2m, 4m, 8m, 16m |
+| `emailPayload` | Object | `{ to, subject, body }` — stored for retries |
+| `errorMessage` | String | last failure reason |
+
+---
+
+## Background Jobs
+
+| Job | Schedule | What it does |
+|-----|----------|-------------|
+| Hold Cleanup | Every minute | Finds expired `held` appointments, transitions to `cancelled`, writes history |
+| Notification Retry | Every 5 minutes | Picks up `queued` notifications past `nextRetryAt`, dispatches in batches of 10 |
+| Appointment Reminder | Every hour at `:00` | Sends reminder email 24–25 hours before confirmed appointments (deduped) |
+| Medication Reminder | Every hour at `:30` | Sends per-medicine reminders based on frequency, stops after `durationDays` |
+
+---
+
+## LLM Integration (Groq)
+
+Two summaries are generated automatically — both always resolve (never throw). If the LLM fails or times out, `isFallback: true` is stored and a template response is used instead.
+
+### Pre-visit Summary
+Triggered when a patient confirms a booking. System prompt instructs the model to return strict JSON:
+
+```
+{
+  "urgency": "Low" | "Medium" | "High",
+  "chiefComplaint": "<one sentence>",
+  "suggestedQuestions": ["...", "...", "..."]
+}
+```
+
+### Post-visit Summary
+Triggered when a doctor submits notes. Model converts clinical notes + prescription into a patient-friendly plain-English summary (under 200 words, warm tone).
+
+**Timeout:** Configurable via `LLM_TIMEOUT_MS` (default 10 seconds). Uses `Promise.race` against the Groq call.
+
+---
+
+## Google Calendar Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a project → Enable **Google Calendar API**
+3. Create OAuth 2.0 credentials (Web application type)
+4. Add authorised redirect URI: `http://localhost:5000/api/calendar/oauth/callback`
+5. Copy Client ID + Secret into `.env`
+
+**Flow:**
+1. User calls `GET /api/calendar/connect` → receives consent URL
+2. User visits URL, grants access
+3. Google redirects to `/api/calendar/oauth/callback` with auth code
+4. Backend exchanges code for tokens, stores on `User.googleTokens`
+5. All future appointment confirmations/cancellations automatically create/delete calendar events
+
+Calendar integration is **optional** — the app works fully without it. Users without tokens simply skip calendar operations silently.
+
+---
+
+## Key Architecture Decisions
+
+- **Double-booking prevention** — Partial unique index on `(doctorId, slotStart)` for `held/confirmed` status at the DB level, not application level. Race conditions are impossible.
+- **Outbox pattern** — Every notification is written to MongoDB first, then dispatched async. Failures are retried with exponential backoff by the cron job.
+- **Soft deletes** — Doctors are deactivated (`isActive: false`), never deleted. Appointment history is preserved.
+- **Non-blocking external calls** — LLM, email, and calendar operations are all fire-and-forget after the main transaction commits. They never block the HTTP response.
+- **Lazy service initialisation** — Groq and Nodemailer clients are initialised on first use, so the server boots cleanly even without API keys set.
+- **UTC slots** — `slotGenerator.js` uses `Date.UTC()` to avoid timezone issues on non-UTC servers.
