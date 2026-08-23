@@ -1,7 +1,7 @@
 import axiosInstance from "./axiosInstance";
 
-export const getDoctors       = (specialization) =>
-  axiosInstance.get("/patient/doctors", { params: { specialization } }).then(r => r.data.doctors);
+export const getDoctors = (specialization) =>
+  axiosInstance.get("/patient/doctors", { params: specialization ? { specialization } : {} }).then(r => r.data.doctors);
 
 export const getSlots         = (doctorId, date) =>
   axiosInstance.get(`/patient/doctors/${doctorId}/slots`, { params: { date } }).then(r => r.data.slots);

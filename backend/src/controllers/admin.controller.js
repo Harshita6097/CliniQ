@@ -377,6 +377,27 @@ exports.getAllAppointments = async (req, res, next) => {
   }
 };
 
+// ─── GET /api/admin/appointments/:id ────────────────────────────────────────
+exports.getAdminAppointmentById = async (req, res, next) => {
+  try {
+    const [appointment, history] = await Promise.all([
+      Appointment.findById(req.params.id)
+        .populate("patientId", "name email phone")
+        .populate("doctorId", "name email")
+        .lean(),
+      AppointmentStatusHistory.find({ appointmentId: req.params.id })
+        .populate("changedBy", "name role")
+        .sort({ timestamp: 1 })
+        .lean(),
+    ]);
+    if (!appointment)
+      return res.status(404).json({ message: "Appointment not found." });
+    res.status(200).json({ appointment, history });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ─── GET /api/admin/notifications ────────────────────────────────────────────
 // Notification status dashboard — queued / sent / failed counts + recent entries
 exports.getNotificationStatus = async (req, res, next) => {

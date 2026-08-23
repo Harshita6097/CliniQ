@@ -23,6 +23,9 @@ export const adminMarkLeave      = (id, dates) =>
 export const adminGetAllAppointments = (params) =>
   axiosInstance.get("/admin/appointments", { params }).then(r => r.data);
 
+export const adminGetAppointmentById = (id) =>
+  axiosInstance.get(`/admin/appointments/${id}`).then(r => r.data);
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 export const adminGetNotifications = (status) =>
   axiosInstance.get("/admin/notifications", { params: status ? { status } : {} }).then(r => r.data);

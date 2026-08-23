@@ -1,248 +1,184 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getAppointmentById } from "../../api/appointment.api";
-import { useCancelAppointment } from "../../hooks/useAppointments";
-import { formatSlot, timeAgo } from "../../utils/dateUtils";
-import { statusClasses, statusLabel } from "../../utils/statusBadge";
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getAppointmentById } from '../../api/appointment.api';
+import { useCancelAppointment } from '../../hooks/useAppointments';
+import { formatSlot } from '../../utils/dateUtils';
+import { StatusBadge, SkeletonLoader } from '../../components/common/index.jsx';
+import CancelModal from '../../components/appointments/CancelModal.jsx';
+import StatusHistory from '../../components/appointments/StatusHistory.jsx';
+import PrescriptionCard from '../../components/appointments/PrescriptionCard.jsx';
+import AICard from '../../components/appointments/AICard.jsx';
+import PulseThread from '../../components/common/PulseThread.jsx';
 
-const urgencyColors = {
-  High:   "bg-red-100 text-red-700 border-red-200",
-  Medium: "bg-amber-100 text-amber-700 border-amber-200",
-  Low:    "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
+function Section({ title, icon, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="bg-white rounded-lg border border-stone shadow-soft overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-paper-dim transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-ink-soft">{icon}</span>
+          <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" className={`w-4 h-4 text-stone-dark transition-transform ${open ? 'rotate-180' : ''}`} stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && <div className="px-5 pb-5 border-t border-stone">{children}</div>}
+    </div>
+  );
+}
+
+function DocumentChecklist({ items }) {
+  const [checked, setChecked] = useState({});
+  const toggle = i => setChecked(c => ({ ...c, [i]: !c[i] }));
+  return (
+    <ul className="space-y-2 mt-3">
+      {items.map((item, i) => (
+        <li key={i} className="flex items-center gap-3 cursor-pointer" onClick={() => toggle(i)}>
+          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked[i] ? 'bg-ok border-ok' : 'border-stone-dark'}`}>
+            {checked[i] && <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="white" strokeWidth="3" strokeLinecap="round"><path d="M5 13l4 4L19 7" /></svg>}
+          </div>
+          <span className={`text-sm transition-colors ${checked[i] ? 'line-through text-ink-soft' : 'text-ink'}`}>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function PatientAppointmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showCancel, setShowCancel] = useState(false);
-  const [reason, setReason]         = useState("");
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["appointment", id],
-    queryFn:  () => getAppointmentById(id),
+    queryKey: ['appointment', id],
+    queryFn: () => getAppointmentById(id),
   });
-
   const { mutate: cancel, isPending } = useCancelAppointment();
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center py-24">
-      <div className="w-10 h-10 border-3 border-teal-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (isLoading) return <div className="p-8"><SkeletonLoader variant="card" count={3} /></div>;
   if (isError) return (
     <div className="text-center py-20">
-      <div className="text-4xl mb-3">⚠️</div>
-      <p className="text-sm text-red-500 font-medium">Appointment not found or you don't have access to it.</p>
-      <button onClick={() => navigate("/patient/appointments")} className="mt-4 text-sm font-medium text-teal-600 hover:underline">
-        ← Back to appointments
-      </button>
+      <p className="text-sm text-danger font-medium">Appointment not found or you don't have access to it.</p>
+      <button onClick={() => navigate('/patient/appointments')} className="mt-4 text-sm font-semibold text-patient hover:underline">← Back to appointments</button>
     </div>
   );
 
   const { appointment: appt, history } = data;
-  const canCancel = appt.status === "confirmed" || appt.status === "held";
+  const canCancel = appt.status === 'confirmed' || appt.status === 'held';
+  const isCompleted = appt.status === 'completed';
 
-  const handleCancel = () => {
-    cancel({ id, reason: reason || "Cancelled by patient" }, {
-      onSuccess: () => navigate("/patient/appointments"),
-    });
+  const handleCancel = reason => {
+    cancel({ id, reason }, { onSuccess: () => navigate('/patient/appointments') });
   };
 
   return (
-    <div className="max-w-2xl space-y-5 animate-fadeIn">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700 font-medium"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
+    <div className="max-w-2xl space-y-5 animate-fadeIn pb-24">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-patient hover:text-patient-dark font-semibold">
+        <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 19l-7-7 7-7" /></svg>
         Back
       </button>
 
       {/* Header card */}
-      <div className="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-3xl p-6 text-white shadow-xl shadow-teal-200 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
+      <div className="relative rounded-lg bg-gradient-to-r from-patient-dark via-patient to-patient-light p-6 text-white shadow-pop overflow-hidden chart-paper">
+        <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-teal-100 text-xs font-medium mb-1">Appointment</p>
-              <h1 className="text-xl font-bold">Dr. {appt.doctorId?.name}</h1>
-              <p className="text-teal-100 text-sm mt-1">{formatSlot(appt.slotStart)}</p>
+              <p className="font-mono text-[10px] text-white/60 uppercase tracking-widest mb-1">Appointment</p>
+              <h1 className="font-display text-xl font-semibold">Dr. {appt.doctorId?.name}</h1>
+              <p className="font-mono text-xs text-white/70 mt-1">{formatSlot(appt.slotStart)}</p>
             </div>
-            <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${statusClasses(appt.status)}`}>
-              {statusLabel(appt.status)}
-            </span>
+            <StatusBadge status={appt.status} />
           </div>
-          <div className="flex gap-4 text-sm">
-            <div className="bg-white/20 rounded-xl px-3 py-2">
-              <p className="text-teal-100 text-xs">From</p>
-              <p className="font-semibold">{formatSlot(appt.slotStart)}</p>
+          <div className="flex gap-3 text-sm flex-wrap">
+            <div className="bg-white/15 rounded-md px-3 py-2">
+              <p className="font-mono text-[10px] text-white/60 uppercase">From</p>
+              <p className="font-mono text-xs font-semibold">{formatSlot(appt.slotStart)}</p>
             </div>
-            <div className="bg-white/20 rounded-xl px-3 py-2">
-              <p className="text-teal-100 text-xs">To</p>
-              <p className="font-semibold">{formatSlot(appt.slotEnd)}</p>
+            <div className="bg-white/15 rounded-md px-3 py-2">
+              <p className="font-mono text-[10px] text-white/60 uppercase">To</p>
+              <p className="font-mono text-xs font-semibold">{formatSlot(appt.slotEnd)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {appt.cancellationReason && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-4 flex gap-3">
-          <span className="text-lg">❌</span>
+        <div className="bg-danger-tint border border-danger/30 rounded-md px-5 py-4 flex gap-3">
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-danger shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
           <div>
-            <p className="text-sm font-semibold text-red-700">Cancellation Reason</p>
-            <p className="text-sm text-red-600 mt-0.5">{appt.cancellationReason}</p>
+            <p className="text-sm font-semibold text-danger">Cancellation Reason</p>
+            <p className="text-sm text-danger/80 mt-0.5">{appt.cancellationReason}</p>
           </div>
         </div>
       )}
 
-      {/* Symptoms */}
       {appt.symptomFormText && (
-        <Card title="Your Symptoms" icon="🩺">
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{appt.symptomFormText}</p>
-        </Card>
-      )}
-
-      {/* Pre-visit AI summary */}
-      {appt.preVisitSummary && (
-        <Card title="Pre-visit AI Summary" icon="🤖" fallback={appt.preVisitSummary.isFallback}>
-          {appt.preVisitSummary.urgency && urgencyColors[appt.preVisitSummary.urgency] && (
-            <div className="mb-3">
-              <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${urgencyColors[appt.preVisitSummary.urgency] ?? "bg-gray-100 text-gray-600"}`}>
-                ⚡ Urgency: {appt.preVisitSummary.urgency}
-              </span>
-            </div>
-          )}
-          <p className="text-sm text-gray-700 mb-3">
-            <span className="font-semibold text-gray-800">Chief complaint: </span>
-            {appt.preVisitSummary.chiefComplaint}
-          </p>
-          {appt.preVisitSummary.documentsToCarry?.length > 0 && (
-            <div className="bg-teal-50 rounded-xl p-4">
-              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-2">📁 What to bring to your appointment</p>
-              <ul className="space-y-1.5">
-                {appt.preVisitSummary.documentsToCarry.map((item, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-teal-800">
-                    <span className="text-teal-400 font-bold shrink-0">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Post-visit summary */}
-      {appt.postVisitSummary && (
-        <Card title="Post-visit Summary" icon="📋" fallback={appt.postVisitSummary.isFallback}>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {appt.postVisitSummary.patientFriendlySummary}
-          </p>
-        </Card>
-      )}
-
-      {/* Prescription */}
-      {appt.prescription?.length > 0 && (
-        <Card title="Prescription" icon="💊">
-          <div className="space-y-3">
-            {appt.prescription.map((item, i) => (
-              <div key={i} className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100 rounded-xl px-4 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-bold text-gray-800">{item.medicine}</p>
-                    <p className="text-xs text-teal-700 font-medium mt-0.5">{item.dosage}</p>
-                  </div>
-                  <span className="text-xs bg-white border border-teal-200 text-teal-600 font-semibold px-2.5 py-1 rounded-full shrink-0">
-                    {item.durationDays}d
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1.5">{item.frequency}</p>
-                {item.notes && <p className="text-xs text-gray-400 mt-1 italic">{item.notes}</p>}
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Status history */}
-      {history?.length > 0 && (
-        <Card title="Status History" icon="🕐">
-          <div className="relative">
-            <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-100" />
-            <ul className="space-y-4 pl-8">
-              {history.map((h, i) => (
-                <li key={h._id ?? i} className="relative">
-                  <div className="absolute -left-5 w-2.5 h-2.5 rounded-full bg-teal-400 border-2 border-white shadow-sm" />
-                  <p className="text-xs font-semibold text-gray-700">
-                    {h.fromStatus ?? "—"} → {h.toStatus}
-                  </p>
-                  {h.reason && <p className="text-xs text-gray-400 mt-0.5">{h.reason}</p>}
-                  <p className="text-xs text-gray-300 mt-0.5">{timeAgo(h.timestamp ?? h.createdAt)}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Card>
-      )}
-
-      {/* Cancel */}
-      {canCancel && !showCancel && (
-        <button
-          onClick={() => setShowCancel(true)}
-          className="text-sm text-red-500 hover:text-red-600 font-medium flex items-center gap-1.5 hover:underline"
+        <Section title="Your Symptoms" defaultOpen={!isCompleted && appt.status !== 'cancelled'}
+          icon={<svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          Cancel this appointment
-        </button>
+          <p className="text-sm text-ink whitespace-pre-wrap leading-relaxed pt-4">{appt.symptomFormText}</p>
+        </Section>
       )}
 
-      {showCancel && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
-          <p className="text-sm font-bold text-red-700 mb-3">⚠️ Confirm cancellation</p>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason (optional)"
-            rows={2}
-            className="w-full rounded-xl border border-red-200 px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-300 resize-none bg-white"
-          />
-          <div className="flex gap-3">
+      {appt.preVisitSummary && (
+        <Section title="Pre-visit AI Summary" defaultOpen={!isCompleted}
+          icon={<svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 6v4m0 4h.01" /></svg>}
+        >
+          <div className="pt-4">
+            <AICard type="pre" summary={appt.preVisitSummary} portal="patient" />
+            {appt.preVisitSummary.documentsToCarry?.length > 0 && (
+              <DocumentChecklist items={appt.preVisitSummary.documentsToCarry} />
+            )}
+          </div>
+        </Section>
+      )}
+
+      {appt.postVisitSummary && (
+        <Section title="Post-visit Summary" defaultOpen={isCompleted}
+          icon={<svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4" /></svg>}
+        >
+          <div className="pt-4"><AICard type="post" summary={appt.postVisitSummary} portal="patient" /></div>
+        </Section>
+      )}
+
+      {appt.prescription?.length > 0 && (
+        <Section title="Prescription" defaultOpen={isCompleted}
+          icon={<svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="5" /><path d="M7 12h10" /></svg>}
+        >
+          <div className="pt-4"><PrescriptionCard prescription={appt.prescription} /></div>
+        </Section>
+      )}
+
+      {history?.length > 0 && (
+        <Section title="Status History"
+          icon={<svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>}
+        >
+          <div className="pt-4"><StatusHistory history={history} portal="patient" /></div>
+        </Section>
+      )}
+
+      {/* Sticky cancel bar */}
+      {canCancel && (
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-30 md:left-64">
+          <div className="bg-white rounded-lg border border-stone shadow-pop px-5 py-3 flex items-center gap-4 max-w-sm w-full">
+            <p className="text-xs text-ink-soft flex-1">Need to cancel this appointment?</p>
             <button
-              onClick={handleCancel}
-              disabled={isPending}
-              className="px-5 py-2.5 text-sm font-semibold bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white rounded-xl transition-colors"
+              onClick={() => setShowCancel(true)}
+              className="text-xs font-bold text-danger bg-danger-tint hover:bg-danger/20 px-4 py-2 rounded-md transition-colors shrink-0"
             >
-              {isPending ? "Cancelling…" : "Yes, Cancel"}
-            </button>
-            <button
-              onClick={() => setShowCancel(false)}
-              className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors"
-            >
-              Keep it
+              Cancel appointment
             </button>
           </div>
         </div>
       )}
+
+      <CancelModal isOpen={showCancel} onClose={() => setShowCancel(false)} onConfirm={handleCancel} isPending={isPending} />
     </div>
   );
 }
-
-const Card = ({ title, icon, children, fallback }) => (
-  <div className="bg-white rounded-2xl border border-teal-100 shadow-md p-5">
-    <div className="flex items-center gap-2 mb-4">
-      <span className="text-lg">{icon}</span>
-      <h2 className="text-sm font-bold text-gray-800">{title}</h2>
-      {fallback && (
-        <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full ml-auto">
-          AI unavailable
-        </span>
-      )}
-    </div>
-    {children}
-  </div>
-);

@@ -14,6 +14,7 @@ const {
   adminMarkLeave,
   leaveDoctorValidation,
   getAllAppointments,
+  getAdminAppointmentById,
   getNotificationStatus,
   getAllUsers,
   toggleUserActive,
@@ -34,6 +35,7 @@ router.post("/doctors/:id/leave", leaveDoctorValidation, adminMarkLeave);
 
 // ─── System-wide appointment view ─────────────────────────────────────────────
 router.get("/appointments", getAllAppointments);
+router.get("/appointments/:id", getAdminAppointmentById);
 
 // ─── Notification status dashboard ───────────────────────────────────────────
 router.get("/notifications", getNotificationStatus);

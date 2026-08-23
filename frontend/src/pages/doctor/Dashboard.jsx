@@ -1,169 +1,119 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getDoctorAppointments } from "../../api/doctor.api";
-import { slotLabel, formatDate } from "../../utils/dateUtils";
-import { statusClasses, statusLabel } from "../../utils/statusBadge";
-import { isToday } from "date-fns";
-import useAuth from "../../hooks/useAuth";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getDoctorAppointments } from '../../api/doctor.api';
+import { slotLabel, formatDate } from '../../utils/dateUtils';
+import { StatusBadge, SkeletonLoader } from '../../components/common/index.jsx';
+import AppointmentRow from '../../components/appointments/AppointmentRow.jsx';
+import { isToday } from 'date-fns';
+import useAuth from '../../hooks/useAuth';
+import PulseThread from '../../components/common/PulseThread.jsx';
 
-const FILTERS = ["all", "confirmed", "completed", "cancelled"];
+const TABS = ['Today', 'Upcoming', 'All'];
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
-  const [filter, setFilter] = useState("all");
+  const [tab, setTab]       = useState('Today');
+  const [search, setSearch] = useState('');
 
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ["doctorAppointments", filter],
-    queryFn:  () => getDoctorAppointments(filter === "all" ? undefined : filter),
+    queryKey: ['doctorAppointments', 'all'],
+    queryFn: () => getDoctorAppointments(),
   });
 
-  const todayList  = appointments.filter(a => isToday(new Date(a.slotStart)) && a.status === "confirmed");
-  const confirmed  = appointments.filter(a => a.status === "confirmed");
-  const completed  = appointments.filter(a => a.status === "completed");
+  const todayList    = appointments.filter(a => isToday(new Date(a.slotStart)) && a.status === 'confirmed');
+  const upcomingList = appointments.filter(a => a.status === 'confirmed' && new Date(a.slotStart) > new Date());
+  const completed    = appointments.filter(a => a.status === 'completed');
+
+  const allFiltered = appointments.filter(a => {
+    if (!search) return true;
+    return a.patientId?.name?.toLowerCase().includes(search.toLowerCase());
+  });
+
+  const tabData = { Today: todayList, Upcoming: upcomingList, All: allFiltered };
+  const displayed = tabData[tab] ?? [];
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 p-8 overflow-hidden shadow-xl shadow-indigo-200">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full translate-y-1/2" />
+      <div className="relative rounded-lg bg-gradient-to-r from-doctor-dark via-doctor to-doctor-light p-8 overflow-hidden shadow-pop chart-paper">
+        <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
-          <p className="text-indigo-200 text-sm font-medium mb-1">{greeting}, Dr. {user.name?.split(" ")[0]} 👨‍⚕️</p>
-          <h1 className="text-3xl font-bold text-white mb-1">Your Schedule</h1>
-          <p className="text-indigo-200 text-sm mb-0">{formatDate(new Date())}</p>
+          <p className="text-doctor-tint text-sm font-medium mb-1">{greeting}, Dr. {user.name?.split(' ')[0]}</p>
+          <h1 className="font-display text-3xl font-semibold text-white mb-1">Your Schedule</h1>
+          <p className="font-mono text-xs text-doctor-tint">{formatDate(new Date())}</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Today's Patients", value: todayList.length,  color: "from-indigo-400 to-indigo-600",  icon: "👥" },
-          { label: "Upcoming",         value: confirmed.length,  color: "from-violet-400 to-violet-600",  icon: "📅" },
-          { label: "Completed",        value: completed.length,  color: "from-slate-500 to-slate-700",    icon: "✅" },
-        ].map(({ label, value, color, icon }) => (
-          <div key={label} className={`rounded-2xl p-5 bg-gradient-to-br ${color} flex items-center gap-4 shadow-md`}>
-            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
-              {icon}
+      {isLoading ? <SkeletonLoader variant="stat" count={3} /> : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { label: "Today's Patients", value: todayList.length,  tint: 'bg-doctor-tint',  text: 'text-doctor-dark',
+              icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 2h5" /></svg> },
+            { label: 'Upcoming',         value: upcomingList.length, tint: 'bg-warn-tint',  text: 'text-warn',
+              icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg> },
+            { label: 'Completed',        value: completed.length,  tint: 'bg-sage-tint',   text: 'text-sage',
+              icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4" /></svg> },
+          ].map(({ label, value, tint, text, icon }) => (
+            <div key={label} className={`rounded-lg p-5 ${tint} flex items-center gap-4 border border-stone/50`}>
+              <div className={`w-11 h-11 rounded-md bg-white/60 flex items-center justify-center ${text} shadow-soft`}>{icon}</div>
+              <div>
+                <p className={`font-mono text-2xl font-bold ${text}`}>{value}</p>
+                <p className={`text-xs font-semibold ${text} opacity-80`}>{label}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-3xl font-bold text-white">{value}</p>
-              <p className="text-sm text-white/80 font-medium">{label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Today's appointments */}
-      <div className="bg-white rounded-3xl border border-indigo-100 shadow-md overflow-hidden">
-        <div className="px-6 py-5 border-b border-indigo-50 bg-gradient-to-r from-indigo-50 to-violet-50 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-gray-800">Today's Schedule</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Confirmed appointments for today</p>
-          </div>
-          {todayList.length > 0 && (
-            <span className="text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-full">
-              {todayList.length}
-            </span>
-          )}
+      {/* Tabs */}
+      <div className="bg-white rounded-lg border border-stone shadow-soft overflow-hidden">
+        <div className="flex border-b border-stone">
+          {TABS.map(t => (
+            <button
+              key={t} onClick={() => setTab(t)}
+              className={`flex-1 py-3.5 text-sm font-semibold transition-colors border-b-2 ${
+                tab === t ? 'text-doctor border-doctor bg-doctor-tint/30' : 'text-ink-soft border-transparent hover:text-ink hover:bg-paper-dim'
+              }`}
+            >
+              {t}
+              {t === 'Today' && todayList.length > 0 && (
+                <span className="ml-1.5 font-mono text-[10px] bg-doctor text-white px-1.5 py-0.5 rounded-full">{todayList.length}</span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        {tab === 'All' && (
+          <div className="px-5 py-3 border-b border-stone">
+            <div className="relative max-w-xs">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-dark" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+              <input
+                type="text" placeholder="Search patient…" value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full rounded-md border border-stone pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-doctor bg-paper focus:bg-white text-ink"
+              />
+            </div>
           </div>
-        ) : todayList.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <div className="text-4xl mb-3">🗓️</div>
-            <p className="text-sm font-medium text-gray-500">No appointments today</p>
-            <p className="text-xs text-gray-400 mt-1">Enjoy your free day!</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-indigo-50">
-            {todayList.map((appt) => (
-              <li key={appt._id} className="px-6 py-4 flex items-center justify-between hover:bg-indigo-50/50 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-700 font-bold text-sm shadow-sm">
-                    {appt.patientId?.name?.[0] ?? "P"}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{appt.patientId?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{slotLabel(appt.slotStart)}</p>
-                  </div>
-                </div>
-                <Link
-                  to={`/doctor/appointments/${appt._id}`}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  Open →
-                </Link>
-              </li>
-            ))}
-          </ul>
         )}
-      </div>
-
-      {/* All appointments */}
-      <div className="bg-white rounded-3xl border border-indigo-100 shadow-md overflow-hidden">
-        <div className="px-6 py-5 border-b border-indigo-50 bg-gradient-to-r from-indigo-50 to-violet-50 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-base font-bold text-gray-800">All Appointments</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Filter by status</p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {FILTERS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all duration-150 ${
-                  filter === f
-                    ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md"
-                    : "bg-white border border-indigo-200 text-indigo-600 hover:border-indigo-400"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : appointments.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <div className="text-4xl mb-3">📭</div>
-            <p className="text-sm text-gray-500">No appointments found</p>
+          <div className="p-6"><SkeletonLoader variant="row" count={4} /></div>
+        ) : displayed.length === 0 ? (
+          <div className="py-12 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10 text-stone-dark mx-auto mb-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+            <p className="text-sm text-ink-soft font-semibold">
+              {tab === 'Today' ? 'No appointments today' : tab === 'Upcoming' ? 'No upcoming appointments' : 'No appointments found'}
+            </p>
           </div>
         ) : (
-          <ul className="divide-y divide-indigo-50">
-            {appointments.map((appt) => (
-              <li key={appt._id} className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-indigo-50/40 transition-colors group">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-indigo-700 font-bold text-sm shadow-sm shrink-0">
-                    {appt.patientId?.name?.[0] ?? "P"}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{appt.patientId?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{slotLabel(appt.slotStart)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusClasses(appt.status)}`}>
-                    {statusLabel(appt.status)}
-                  </span>
-                  <Link
-                    to={`/doctor/appointments/${appt._id}`}
-                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    View
-                  </Link>
-                </div>
-              </li>
+          <ul className="divide-y divide-stone/50">
+            {displayed.map(appt => (
+              <AppointmentRow key={appt._id} appt={appt} viewHref={`/doctor/appointments/${appt._id}`} portal="doctor" />
             ))}
           </ul>
         )}

@@ -1,56 +1,76 @@
-import { Link } from "react-router-dom";
-import { useAppointments } from "../../hooks/useAppointments";
-import useAuth from "../../hooks/useAuth";
-import { slotLabel } from "../../utils/dateUtils";
-import { statusClasses, statusLabel } from "../../utils/statusBadge";
+import { Link } from 'react-router-dom';
+import { useAppointments } from '../../hooks/useAppointments';
+import useAuth from '../../hooks/useAuth';
+import { slotLabel } from '../../utils/dateUtils';
+import { StatusBadge, SkeletonLoader } from '../../components/common/index.jsx';
+import PulseThread from '../../components/common/PulseThread.jsx';
 
-const StatCard = ({ label, value, color, icon }) => (
-  <div className={`rounded-2xl p-5 ${color} flex items-center gap-4`}>
-    <div className="w-12 h-12 rounded-xl bg-white/40 flex items-center justify-center text-2xl shadow-sm">
-      {icon}
-    </div>
-    <div>
-      <p className="text-3xl font-bold text-white">{value}</p>
-      <p className="text-sm text-white/80 font-medium">{label}</p>
-    </div>
-  </div>
+// Medical stat icons
+const PulseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12h4l2-7 4 14 3-9 2 2h5" />
+  </svg>
 );
+const ClipboardCheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  </svg>
+);
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+  </svg>
+);
+
+function StatCard({ label, value, icon, tint, textColor }) {
+  return (
+    <div className={`rounded-lg p-5 ${tint} flex items-center gap-4 border border-stone/50`}>
+      <div className={`w-11 h-11 rounded-md bg-white/60 flex items-center justify-center ${textColor} shadow-soft`}>
+        {icon}
+      </div>
+      <div>
+        <p className={`font-mono text-2xl font-bold ${textColor}`}>{value}</p>
+        <p className={`text-xs font-semibold ${textColor} opacity-80`}>{label}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function PatientDashboard() {
   const { user } = useAuth();
   const { data: appointments = [], isLoading } = useAppointments();
 
-  const upcoming  = appointments.filter(a => a.status === "confirmed" && new Date(a.slotStart) > new Date());
-  const completed = appointments.filter(a => a.status === "completed");
+  const upcoming  = appointments.filter(a => a.status === 'confirmed' && new Date(a.slotStart) > new Date());
+  const completed = appointments.filter(a => a.status === 'completed');
   const recent    = upcoming.slice(0, 5);
+  const nextAppt  = upcoming[0];
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 p-8 overflow-hidden shadow-xl shadow-teal-200">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full translate-y-1/2" />
+      <div className="relative rounded-lg bg-gradient-to-r from-patient-dark via-patient to-patient-light p-8 overflow-hidden shadow-pop chart-paper">
+        <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
-          <p className="text-teal-100 text-sm font-medium mb-1">{greeting} 👋</p>
-          <h1 className="text-3xl font-bold text-white mb-2">{user.name}</h1>
-          <p className="text-teal-100 text-sm mb-6">Your health is our priority. How can we help you today?</p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              to="/patient/book"
-              className="inline-flex items-center gap-2 rounded-xl bg-white text-teal-700 font-semibold text-sm px-5 py-2.5 hover:bg-teal-50 transition-all duration-150 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          <p className="text-patient-tint text-sm font-medium mb-1">{greeting}</p>
+          <h1 className="font-display text-3xl font-semibold text-white mb-2">{user.name}</h1>
+          <p className="text-patient-tint text-sm mb-6">Your health is our priority. How can we help you today?</p>
+          {nextAppt && (
+            <div className="mb-5 inline-flex items-center gap-2 bg-white/15 border border-white/30 rounded-md px-4 py-2 text-white text-sm">
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
               </svg>
+              Next: Dr. {nextAppt.doctorId?.name} — <span className="font-mono text-xs">{slotLabel(nextAppt.slotStart)}</span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Link to="/patient/book" className="inline-flex items-center gap-2 rounded-xl bg-white text-patient-dark font-bold text-sm px-5 py-2.5 hover:bg-patient-tint transition-all duration-150 shadow-soft hover:shadow-pop hover:-translate-y-0.5">
+              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 4v16m8-8H4" /></svg>
               Book Appointment
             </Link>
-            <Link
-              to="/patient/appointments"
-              className="inline-flex items-center gap-2 rounded-xl bg-white/20 text-white font-semibold text-sm px-5 py-2.5 hover:bg-white/30 transition-all duration-150 border border-white/30"
-            >
+            <Link to="/patient/appointments" className="inline-flex items-center gap-2 rounded-xl bg-white/20 text-white font-bold text-sm px-5 py-2.5 hover:bg-white/30 transition-all duration-150 border border-white/30">
               View All
             </Link>
           </div>
@@ -58,65 +78,51 @@ export default function PatientDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Upcoming"  value={upcoming.length}  color="bg-gradient-to-br from-teal-400 to-teal-600"   icon="📅" />
-        <StatCard label="Completed" value={completed.length} color="bg-gradient-to-br from-emerald-400 to-emerald-600" icon="✅" />
-        <StatCard label="Total"     value={appointments.length} color="bg-gradient-to-br from-cyan-400 to-cyan-600"  icon="📋" />
-      </div>
+      {isLoading ? <SkeletonLoader variant="stat" count={3} /> : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard label="Upcoming"  value={upcoming.length}      icon={<PulseIcon />}         tint="bg-patient-tint"  textColor="text-patient-dark" />
+          <StatCard label="Completed" value={completed.length}     icon={<ClipboardCheckIcon />} tint="bg-sage-tint"     textColor="text-sage" />
+          <StatCard label="Total"     value={appointments.length}  icon={<CalendarIcon />}       tint="bg-paper-dim"     textColor="text-ink-soft" />
+        </div>
+      )}
 
-      {/* Upcoming appointments */}
-      <div className="bg-white rounded-3xl shadow-md border border-teal-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-teal-50 bg-gradient-to-r from-teal-50 to-cyan-50 flex items-center justify-between">
+      {/* Upcoming list */}
+      <div className="bg-white rounded-lg border border-stone shadow-soft overflow-hidden">
+        <div className="px-6 py-5 border-b border-stone bg-paper-dim flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-gray-800">Upcoming Appointments</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Your next scheduled visits</p>
+            <h2 className="font-display text-base font-semibold text-ink">Upcoming Appointments</h2>
+            <p className="text-xs text-ink-soft mt-0.5">Your next scheduled visits</p>
           </div>
-          <Link to="/patient/appointments" className="text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline">
-            View all →
-          </Link>
+          <Link to="/patient/appointments" className="text-xs font-semibold text-patient hover:text-patient-dark hover:underline">View all →</Link>
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-12 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-teal-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div className="p-6"><SkeletonLoader variant="row" count={3} /></div>
         ) : recent.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="text-4xl mb-3">🗓️</div>
-            <p className="text-sm font-medium text-gray-500">No upcoming appointments</p>
-            <p className="text-xs text-gray-400 mt-1">Book one to get started</p>
-            <Link
-              to="/patient/book"
-              className="inline-block mt-4 text-sm font-medium text-teal-600 hover:underline"
-            >
-              Book now →
-            </Link>
+            <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10 text-stone-dark mx-auto mb-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            <p className="text-sm font-semibold text-ink-soft">No upcoming appointments</p>
+            <p className="text-xs text-stone-dark mt-1">Book one to get started</p>
+            <Link to="/patient/book" className="inline-block mt-4 text-sm font-semibold text-patient hover:underline">Book now →</Link>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-50">
+          <ul className="divide-y divide-stone/50">
             {recent.map((appt, i) => (
-              <li
-                key={appt._id}
-                className="px-6 py-4 flex items-center justify-between hover:bg-teal-50/60 transition-colors duration-150 group border-b border-teal-50/80 last:border-0"
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
+              <li key={appt._id} className="px-6 py-4 flex items-center justify-between hover:bg-paper-dim transition-colors duration-150" style={{ animationDelay: `${i * 60}ms` }}>
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center text-teal-600 font-bold text-sm shadow-sm">
-                    {appt.doctorId?.name?.[0] ?? "D"}
+                  <div className="w-10 h-10 rounded-md bg-patient-tint flex items-center justify-center text-patient-dark font-display font-bold text-sm shadow-soft shrink-0">
+                    {appt.doctorId?.name?.[0] ?? 'D'}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">Dr. {appt.doctorId?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{slotLabel(appt.slotStart)}</p>
+                    <p className="text-sm font-semibold text-ink">Dr. {appt.doctorId?.name}</p>
+                    <p className="font-mono text-xs text-ink-soft mt-0.5">{slotLabel(appt.slotStart)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusClasses(appt.status)}`}>
-                    {statusLabel(appt.status)}
-                  </span>
-                  <Link
-                    to={`/patient/appointments/${appt._id}`}
-                    className="text-xs font-medium text-teal-600 hover:text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
+                  <StatusBadge status={appt.status} />
+                  <Link to={`/patient/appointments/${appt._id}`} className="text-xs font-semibold text-patient hover:text-patient-dark bg-patient-tint hover:bg-patient-tint2 px-3 py-1.5 rounded-md transition-colors">
                     View →
                   </Link>
                 </div>

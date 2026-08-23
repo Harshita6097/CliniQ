@@ -1,141 +1,113 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useAppointments, useCancelAppointment } from "../../hooks/useAppointments";
-import { slotLabel } from "../../utils/dateUtils";
-import { statusClasses, statusLabel } from "../../utils/statusBadge";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAppointments, useCancelAppointment } from '../../hooks/useAppointments';
+import AppointmentCard from '../../components/appointments/AppointmentCard.jsx';
+import CancelModal from '../../components/appointments/CancelModal.jsx';
+import { SkeletonLoader, EmptyState } from '../../components/common/index.jsx';
 
-const FILTERS = ["all", "confirmed", "completed", "cancelled", "held"];
-
-const filterIcons = { all: "📋", confirmed: "✅", completed: "🏁", cancelled: "❌", held: "⏳" };
+const FILTERS = ['all', 'confirmed', 'completed', 'cancelled', 'held'];
+const PAGE_SIZE = 10;
 
 export default function MyAppointments() {
-  const [filter, setFilter]       = useState("all");
-  const [cancelId, setCancelId]   = useState(null);
-  const [cancelReason, setReason] = useState("");
+  const [filter, setFilter]     = useState('all');
+  const [sort, setSort]         = useState('newest');
+  const [cancelId, setCancelId] = useState(null);
+  const [page, setPage]         = useState(1);
 
-  const { data: appointments = [], isLoading } = useAppointments(filter === "all" ? undefined : filter);
+  const { data: appointments = [], isLoading } = useAppointments(filter === 'all' ? undefined : filter);
   const { mutate: cancel, isPending }          = useCancelAppointment();
 
-  const handleCancel = () => {
-    if (!cancelId) return;
-    cancel({ id: cancelId, reason: cancelReason || "Cancelled by patient" }, {
-      onSuccess: () => { setCancelId(null); setReason(""); },
-    });
+  const sorted = [...appointments].sort((a, b) => {
+    const diff = new Date(b.slotStart) - new Date(a.slotStart);
+    return sort === 'newest' ? diff : -diff;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleCancel = (reason) => {
+    cancel({ id: cancelId, reason }, { onSuccess: () => setCancelId(null) });
   };
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">My Appointments</h1>
-        <p className="text-sm text-gray-400 mt-1">Track and manage all your visits</p>
+        <h1 className="font-display text-2xl font-semibold text-ink">My Appointments</h1>
+        <p className="text-sm text-ink-soft mt-1">Track and manage all your visits</p>
       </div>
 
-      {/* Filter pills */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold capitalize transition-all duration-150 ${
-              filter === f
-                ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-200"
-                : "bg-white border border-gray-200 text-gray-500 hover:border-teal-300 hover:text-teal-600"
-            }`}
-          >
-            <span>{filterIcons[f]}</span> {f}
-          </button>
-        ))}
-      </div>
-
-      {/* List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-3 border-teal-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : appointments.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm py-16 text-center">
-          <div className="text-5xl mb-4">🗓️</div>
-          <p className="text-sm font-semibold text-gray-500">No appointments found</p>
-          <p className="text-xs text-gray-400 mt-1">Try a different filter or book a new appointment</p>
-          <Link to="/patient/book" className="inline-block mt-4 text-sm font-medium text-teal-600 hover:underline">
-            Book now →
-          </Link>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {appointments.map((appt, i) => (
-            <div
-              key={appt._id}
-              className="bg-white rounded-2xl border border-teal-100 shadow-sm hover:shadow-lg hover:border-teal-300 hover:-translate-y-0.5 transition-all duration-200 px-5 py-4 flex items-center justify-between gap-4 group"
-              style={{ animationDelay: `${i * 40}ms` }}
+      {/* Filters + sort */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {FILTERS.map(f => (
+            <button
+              key={f}
+              onClick={() => { setFilter(f); setPage(1); }}
+              className={`px-4 py-2 rounded-full font-mono text-[11px] font-semibold capitalize transition-all duration-150 ${
+                filter === f
+                  ? 'bg-patient text-white shadow-soft'
+                  : 'bg-white border border-stone text-ink-soft hover:border-patient hover:text-patient'
+              }`}
             >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center text-teal-700 font-bold text-base shadow-sm shrink-0">
-                  {appt.doctorId?.name?.[0] ?? "D"}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">Dr. {appt.doctorId?.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{slotLabel(appt.slotStart)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusClasses(appt.status)}`}>
-                  {statusLabel(appt.status)}
-                </span>
-                <Link
-                  to={`/patient/appointments/${appt._id}`}
-                  className="text-xs font-medium text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  View
-                </Link>
-                {(appt.status === "confirmed" || appt.status === "held") && (
-                  <button
-                    onClick={() => setCancelId(appt._id)}
-                    className="text-xs font-medium text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
+              {f}
+            </button>
           ))}
         </div>
+        <select
+          value={sort} onChange={e => setSort(e.target.value)}
+          className="rounded-md border border-stone px-3 py-2 text-xs font-semibold text-ink-soft bg-white focus:outline-none focus:ring-2 focus:ring-patient"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </div>
+
+      {isLoading ? (
+        <SkeletonLoader variant="card" count={3} />
+      ) : sorted.length === 0 ? (
+        <div className="bg-white rounded-lg border border-stone shadow-soft">
+          <EmptyState
+            icon={<svg viewBox="0 0 24 24" fill="none" className="w-10 h-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>}
+            heading="No appointments found"
+            subtext="Try a different filter or book a new appointment"
+            ctaLabel="Book now"
+            ctaHref="/patient/book"
+          />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {paged.map(appt => (
+              <AppointmentCard
+                key={appt._id}
+                appt={appt}
+                viewHref={`/patient/appointments/${appt._id}`}
+                onCancel={setCancelId}
+                portal="patient"
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="font-mono text-[11px] text-ink-soft">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} of {sorted.length}
+              </p>
+              <div className="flex gap-1">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 text-xs font-semibold rounded-md border border-stone text-ink-soft hover:bg-paper-dim disabled:opacity-40 transition-colors">←</button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 text-xs font-semibold rounded-md border border-stone text-ink-soft hover:bg-paper-dim disabled:opacity-40 transition-colors">→</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Cancel modal */}
-      {cancelId && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-sm animate-scaleIn">
-            <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center text-2xl mb-4">❌</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">Cancel Appointment?</h3>
-            <p className="text-sm text-gray-400 mb-4">This action cannot be undone. Let us know why (optional).</p>
-            <textarea
-              value={cancelReason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason for cancellation…"
-              rows={3}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-red-300 resize-none bg-gray-50"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setCancelId(null); setReason(""); }}
-                className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-              >
-                Keep it
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={isPending}
-                className="flex-1 px-4 py-2.5 text-sm font-semibold bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white rounded-xl transition-colors"
-              >
-                {isPending ? "Cancelling…" : "Yes, Cancel"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CancelModal
+        isOpen={!!cancelId}
+        onClose={() => setCancelId(null)}
+        onConfirm={handleCancel}
+        isPending={isPending}
+      />
     </div>
   );
 }
