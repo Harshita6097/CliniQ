@@ -10,7 +10,7 @@
 | Backend | Node.js + Express |
 | Database | MongoDB Atlas (Mongoose) |
 | Auth | JWT — role-based (patient / doctor / admin) |
-| LLM | Groq API (llama3-8b-8192) |
+| LLM | Google Gemini API (gemini-3.6-flash) |
 | Email | Nodemailer (SMTP / Gmail) |
 | Calendar | Google Calendar API (OAuth 2.0 per-user) |
 | Background Jobs | node-cron (hold cleanup, notification retry, reminders) |
@@ -34,16 +34,20 @@ healthcare-appointment-system/
 │   │   └── utils/        # logger, slotGenerator
 │   ├── .env.example
 │   └── server.js
+├── docs/
+│   ├── system-design.md  # double-booking, leave conflicts, slot hold, notification reliability
+│   └── api-docs.md       # full endpoint reference
 ├── frontend/
 │   ├── src/
-│   │   ├── api/          # axiosInstance, auth.api, appointment.api, doctor.api, admin.api
+│   │   ├── api/          # axiosInstance, auth.api, appointment.api, doctor.api, admin.api, calendar.api
 │   │   ├── context/      # AuthContext
 │   │   ├── hooks/        # useAuth, useAppointments, useSlots
 │   │   ├── pages/
 │   │   │   ├── auth/     # Login, Register
 │   │   │   ├── patient/  # PatientLayout, Dashboard, BookAppointment, MyAppointments, AppointmentDetail
 │   │   │   ├── doctor/   # DoctorLayout, Dashboard, AppointmentDetail, LeaveManager
-│   │   │   └── admin/    # AdminLayout, Dashboard, ManageDoctors, AllAppointments
+│   │   │   ├── admin/    # AdminLayout, Dashboard, ManageDoctors, AllAppointments, Notifications
+│   │   │   └── shared/   # CalendarSettings (Google Calendar connect + notification preferences)
 │   │   └── utils/        # dateUtils, statusBadge
 │   └── .env.example
 └── README.md
@@ -57,7 +61,7 @@ healthcare-appointment-system/
 
 - Node.js 18+
 - MongoDB Atlas cluster (free tier works)
-- Groq API key — [console.groq.com](https://console.groq.com)
+- Gemini API key — [aistudio.google.com](https://aistudio.google.com)
 - Gmail account with an App Password (for Nodemailer)
 - Google Cloud project with Calendar API enabled (optional — app works without it)
 
@@ -140,9 +144,9 @@ All variables live in `backend/.env`. Copy from `backend/.env.example`.
 | `MONGO_URI` | **Yes** | MongoDB Atlas connection string |
 | `JWT_SECRET` | **Yes** | Min 32-character random string |
 | `JWT_EXPIRES_IN` | No | Token lifetime (default `7d`) |
-| `GROQ_API_KEY` | No* | Groq API key — LLM summaries fall back gracefully if missing |
-| `GROQ_MODEL` | No | Model name (default `llama3-8b-8192`) |
-| `LLM_TIMEOUT_MS` | No | LLM call timeout in ms (default `10000`) |
+| `GEMINI_API_KEY` | No* | Google Gemini API key — LLM summaries fall back gracefully if missing |
+| `GEMINI_MODEL` | No | Model name (default `gemini-3.6-flash`) |
+| `LLM_TIMEOUT_MS` | No | LLM call timeout in ms (default `30000`) |
 | `SMTP_HOST` | No* | SMTP host — emails silently fail if missing |
 | `SMTP_PORT` | No | SMTP port (default `587`) |
 | `SMTP_USER` | No* | SMTP username / Gmail address |
@@ -296,6 +300,7 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 | `phone` | String | optional |
 | `googleTokens` | Object | `access_token`, `refresh_token`, `expiry_date` |
 | `isActive` | Boolean | default `true` — soft delete flag |
+| `notificationPreferences` | Object | `{ appointmentReminder, medicationReminder, calendarUpdates }` — all default `true` |
 | `createdAt` / `updatedAt` | Date | auto |
 
 ### DoctorProfile
@@ -321,7 +326,7 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 | `status` | String | `held` \| `confirmed` \| `cancelled` \| `completed` |
 | `holdExpiresAt` | Date | null after confirmation |
 | `symptomFormText` | String | patient-submitted |
-| `preVisitSummary` | Object | `{ urgency, chiefComplaint, suggestedQuestions[], generatedAt, isFallback }` |
+| `preVisitSummary` | Object | `{ urgency, chiefComplaint, suggestedQuestions[], documentsToCarry[], generatedAt, isFallback }` |
 | `postVisitNotes` | String | doctor-submitted |
 | `postVisitSummary` | Object | `{ patientFriendlySummary, generatedAt, isFallback }` |
 | `prescription` | Array | `[{ medicine, dosage, frequency, durationDays, notes }]` |
@@ -365,7 +370,7 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 
 ---
 
-## LLM Integration (Groq)
+## LLM Integration (Google Gemini)
 
 Two summaries are generated automatically — both always resolve (never throw). If the LLM fails or times out, `isFallback: true` is stored and a template response is used instead.
 
@@ -375,15 +380,20 @@ Triggered when a patient confirms a booking. System prompt instructs the model t
 ```
 {
   "urgency": "Low" | "Medium" | "High",
-  "chiefComplaint": "<one sentence>",
-  "suggestedQuestions": ["...", "...", "..."]
+  "chiefComplaint": "<one sentence under 20 words>",
+  "suggestedQuestions": ["<doctor question 1>", "<doctor question 2>", "<doctor question 3>"],
+  "documentsToCarry": ["<document 1>", "<document 2>", "<document 3>"]
 }
 ```
 
-### Post-visit Summary
-Triggered when a doctor submits notes. Model converts clinical notes + prescription into a patient-friendly plain-English summary (under 200 words, warm tone).
+The doctor sees `suggestedQuestions` on the appointment detail page. The patient sees `documentsToCarry` as a checklist of what to bring.
 
-**Timeout:** Configurable via `LLM_TIMEOUT_MS` (default 10 seconds). Uses `Promise.race` against the Groq call.
+### Post-visit Summary
+Triggered when a doctor submits notes. Model converts clinical notes + prescription into a patient-friendly plain-English summary (under 200 words, warm tone). Markdown symbols are stripped from the output.
+
+**Failure handling:** `extractJSON()` repairs truncated/malformed responses. 2-attempt retry on timeout. All fields validated individually — partial LLM responses are padded with safe defaults. Arrays always contain exactly 3 items.
+
+**Timeout:** Configurable via `LLM_TIMEOUT_MS` (default 30 seconds). Uses `Promise.race` against the Gemini call.
 
 ---
 
@@ -404,6 +414,42 @@ Triggered when a doctor submits notes. Model converts clinical notes + prescript
 
 Calendar integration is **optional** — the app works fully without it. Users without tokens simply skip calendar operations silently.
 
+> **Note:** After connecting, the OAuth scope is `https://www.googleapis.com/auth/calendar` (full calendar access, required for custom reminder overrides). Users in Testing mode must be added as test users in the Google Cloud Console → APIs & Services → OAuth consent screen → Test users.
+
+---
+
+## Deployment
+
+### Backend — Render (free tier)
+
+1. Push code to GitHub (main branch, public repo)
+2. Go to [render.com](https://render.com) → New → Web Service
+3. Connect your GitHub repo, set root directory to `backend`
+4. Build command: `npm install`
+5. Start command: `node server.js`
+6. Add all environment variables from `.env.example` under Environment
+7. Set `NODE_ENV=production` and update `CLIENT_URL` to your Vercel frontend URL
+
+### Frontend — Vercel (free tier)
+
+1. Go to [vercel.com](https://vercel.com) → New Project → Import from GitHub
+2. Set root directory to `frontend`
+3. Add environment variable: `REACT_APP_API_URL=https://your-render-backend.onrender.com/api`
+4. Deploy
+
+### Post-deployment
+
+- Update `GOOGLE_REDIRECT_URI` in backend env to `https://your-render-backend.onrender.com/api/calendar/oauth/callback`
+- Add the same URI to your Google Cloud Console → OAuth credentials → Authorised redirect URIs
+- Update `CLIENT_URL` in backend env to your Vercel frontend URL
+
+---
+
+## Further Documentation
+
+- [System Design Write-up](docs/system-design.md) — double-booking prevention, leave conflict handling, slot hold mechanism, notification failure handling
+- [API Documentation](docs/api-docs.md) — full endpoint reference with request/response examples
+
 ---
 
 ## Key Architecture Decisions
@@ -412,5 +458,6 @@ Calendar integration is **optional** — the app works fully without it. Users w
 - **Outbox pattern** — Every notification is written to MongoDB first, then dispatched async. Failures are retried with exponential backoff by the cron job.
 - **Soft deletes** — Doctors are deactivated (`isActive: false`), never deleted. Appointment history is preserved.
 - **Non-blocking external calls** — LLM, email, and calendar operations are all fire-and-forget after the main transaction commits. They never block the HTTP response.
-- **Lazy service initialisation** — Groq and Nodemailer clients are initialised on first use, so the server boots cleanly even without API keys set.
+- **Lazy service initialisation** — Gemini and Nodemailer clients are initialised on first use, so the server boots cleanly even without API keys set.
 - **UTC slots** — `slotGenerator.js` uses `Date.UTC()` to avoid timezone issues on non-UTC servers.
+- **Notification preferences** — Confirmation and cancellation emails are always sent (mandatory). Appointment reminders, medication reminders, and calendar updates are patient-controlled via toggles in the Settings page.
