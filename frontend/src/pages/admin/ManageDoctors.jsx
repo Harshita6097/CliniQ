@@ -4,13 +4,13 @@ import {
   adminGetAllDoctors,
   adminCreateDoctor,
   adminDeactivateDoctor,
+  adminReactivateDoctor,
   adminMarkLeave,
 } from "../../api/admin.api";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-const today = format(new Date(), "yyyy-MM-dd");
 
 const emptyForm = () => ({
   name: "", email: "", password: "", phone: "",
@@ -19,8 +19,32 @@ const emptyForm = () => ({
   workingHours: [{ day: "Monday", start: "09:00", end: "17:00" }],
 });
 
+// Password field with show/hide toggle
+const PasswordField = ({ label, name, value, onChange, required }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <div className="relative">
+        <input
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(f => ({ ...f, [name]: e.target.value }))}
+          required={required}
+          className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white transition-colors"
+        />
+        <button type="button" onClick={() => setShow(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-medium select-none">
+          {show ? "Hide" : "Show"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function ManageDoctors() {
   const queryClient = useQueryClient();
+  const today = format(new Date(), "yyyy-MM-dd");
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm]             = useState(emptyForm());
   const [leaveModal, setLeaveModal] = useState(null);
@@ -45,6 +69,12 @@ export default function ManageDoctors() {
     mutationFn: adminDeactivateDoctor,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminDoctors"] }); toast.success("Doctor deactivated."); },
     onError: (err) => toast.error(err.response?.data?.message || "Failed to deactivate."),
+  });
+
+  const { mutate: reactivate } = useMutation({
+    mutationFn: adminReactivateDoctor,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminDoctors"] }); toast.success("Doctor reactivated."); },
+    onError: (err) => toast.error(err.response?.data?.message || "Failed to reactivate."),
   });
 
   const { mutate: saveLeave, isPending: savingLeave } = useMutation({
@@ -145,12 +175,19 @@ export default function ManageDoctors() {
                 >
                   Mark Leave
                 </button>
-                {d.userId?.isActive && (
+                {d.userId?.isActive ? (
                   <button
                     onClick={() => { if (window.confirm(`Deactivate Dr. ${d.userId?.name}?`)) deactivate(d.userId?._id); }}
                     className="flex-1 text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 rounded-xl transition-colors"
                   >
                     Deactivate
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { if (window.confirm(`Reactivate Dr. ${d.userId?.name}?`)) reactivate(d.userId?._id); }}
+                    className="flex-1 text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-colors"
+                  >
+                    Reactivate
                   </button>
                 )}
               </div>
@@ -166,7 +203,7 @@ export default function ManageDoctors() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Full Name *"           name="name"             value={form.name}             onChange={setForm} required />
               <Field label="Email *"               name="email"            value={form.email}            onChange={setForm} type="email" required />
-              <Field label="Password *"            name="password"         value={form.password}         onChange={setForm} type="password" required />
+              <PasswordField label="Password *"    name="password"         value={form.password}         onChange={setForm} required />
               <Field label="Phone"                 name="phone"            value={form.phone}            onChange={setForm} />
               <Field label="Specialization *"      name="specialization"   value={form.specialization}   onChange={setForm} required />
               <Field label="Slot Duration (mins) *" name="slotDurationMins" value={form.slotDurationMins} onChange={setForm} type="number" required />

@@ -33,7 +33,10 @@ export default function PatientAppointmentDetail() {
   if (isError) return (
     <div className="text-center py-20">
       <div className="text-4xl mb-3">⚠️</div>
-      <p className="text-sm text-red-500 font-medium">Failed to load appointment.</p>
+      <p className="text-sm text-red-500 font-medium">Appointment not found or you don't have access to it.</p>
+      <button onClick={() => navigate("/patient/appointments")} className="mt-4 text-sm font-medium text-teal-600 hover:underline">
+        ← Back to appointments
+      </button>
     </div>
   );
 

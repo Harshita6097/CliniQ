@@ -82,7 +82,7 @@ const confirmSlot = async (appointmentId, patientId, symptomFormText, preVisitSu
 
   try {
     const appointment = await Appointment.findOneAndUpdate(
-      { _id: appointmentId, patientId, status: "held" },
+      { _id: appointmentId, patientId, status: "held", holdExpiresAt: { $gt: new Date() } },
       {
         status: "confirmed",
         holdExpiresAt: null,
@@ -93,7 +93,6 @@ const confirmSlot = async (appointmentId, patientId, symptomFormText, preVisitSu
     );
 
     if (!appointment) {
-      await session.abortTransaction();
       throw Object.assign(
         new Error("Appointment not found, already expired, or not in held status."),
         { statusCode: 404 }
@@ -124,7 +123,6 @@ const cancelAppointment = async (appointmentId, patientId, reason = "Cancelled b
   session.startTransaction();
 
   try {
-    // Fetch first to capture the pre-cancel status, then update
     const existing = await Appointment.findOne(
       { _id: appointmentId, patientId, status: { $in: ["held", "confirmed"] } },
       null,
@@ -132,11 +130,10 @@ const cancelAppointment = async (appointmentId, patientId, reason = "Cancelled b
     );
 
     if (!existing) {
-      await session.abortTransaction();
       throw Object.assign(new Error("Appointment not found or cannot be cancelled."), { statusCode: 404 });
     }
 
-    const fromStatus = existing.status; // captured before update
+    const fromStatus = existing.status;
 
     const appointment = await Appointment.findByIdAndUpdate(
       appointmentId,

@@ -22,13 +22,26 @@ try { calendarService = require("../services/calendar.service"); } catch (_) {}
 
 exports.holdValidation = [
   body("doctorId").isMongoId().withMessage("Valid doctorId is required"),
-  body("slotStart").isISO8601().withMessage("Valid slotStart (ISO8601) is required"),
-  body("slotEnd").isISO8601().withMessage("Valid slotEnd (ISO8601) is required"),
+  body("slotStart")
+    .isISO8601().withMessage("Valid slotStart (ISO8601) is required")
+    .custom((val) => {
+      if (new Date(val) <= new Date()) throw new Error("Cannot book a slot in the past.");
+      return true;
+    }),
+  body("slotEnd")
+    .isISO8601().withMessage("Valid slotEnd (ISO8601) is required")
+    .custom((val, { req }) => {
+      if (new Date(val) <= new Date(req.body.slotStart))
+        throw new Error("slotEnd must be after slotStart.");
+      return true;
+    }),
 ];
 
 exports.confirmValidation = [
   param("id").isMongoId().withMessage("Valid appointment id is required"),
-  body("symptomFormText").trim().notEmpty().withMessage("Symptom description is required"),
+  body("symptomFormText")
+    .trim().notEmpty().withMessage("Symptom description is required")
+    .isLength({ max: 2000 }).withMessage("Symptom description must be under 2000 characters."),
 ];
 
 // ─── GET /api/patient/doctors ─────────────────────────────────────────────────
@@ -39,11 +52,13 @@ exports.getDoctors = async (req, res, next) => {
     if (req.query.specialization)
       filter.specialization = { $regex: req.query.specialization, $options: "i" };
 
+    // Only return profiles whose linked user account is active
     const profiles = await DoctorProfile.find(filter)
-      .populate("userId", "name email phone")
+      .populate({ path: "userId", select: "name email phone", match: { isActive: true } })
       .lean();
 
-    res.status(200).json({ doctors: profiles });
+    // populate with match returns null for userId if user is inactive — filter those out
+    res.status(200).json({ doctors: profiles.filter(p => p.userId !== null) });
   } catch (err) {
     next(err);
   }
@@ -77,10 +92,23 @@ exports.holdAppointment = async (req, res, next) => {
     const { doctorId, slotStart, slotEnd } = req.body;
     const patientId = req.user.id;
 
-    // Verify doctor exists
+    // Prevent self-booking
+    if (patientId === doctorId)
+      return res.status(400).json({ message: "You cannot book an appointment with yourself." });
+
+    // Verify doctor exists and is active
     const doctorProfile = await DoctorProfile.findOne({ userId: doctorId });
     if (!doctorProfile)
       return res.status(404).json({ message: "Doctor not found." });
+
+    const doctorUser = await User.findById(doctorId).select("isActive").lean();
+    if (!doctorUser?.isActive)
+      return res.status(400).json({ message: "This doctor is not currently available." });
+
+    // Prevent holding multiple active slots simultaneously
+    const existingHold = await Appointment.findOne({ patientId, status: "held" });
+    if (existingHold)
+      return res.status(409).json({ message: "You already have a pending slot hold. Complete or wait for it to expire before booking another." });
 
     const appointment = await holdSlot(patientId, doctorId, new Date(slotStart), new Date(slotEnd));
 

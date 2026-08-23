@@ -1,39 +1,35 @@
-const Groq = require("groq-sdk");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const logger = require("../utils/logger");
 
-const MODEL = process.env.GROQ_MODEL || "llama3-8b-8192";
+const MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS) || 10000;
 
-// Lazy-initialise so the module loads safely without GROQ_API_KEY set at import time.
-// The key only needs to exist when an actual LLM call is made.
-let _groq = null;
-const getGroq = () => {
-  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-  return _groq;
+// Lazy-initialise so the module loads safely without GEMINI_API_KEY set at import time.
+let _genAI = null;
+const getGenAI = () => {
+  if (!_genAI) _genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  return _genAI;
 };
 
 // ─── Core caller ──────────────────────────────────────────────────────────────
-// Wraps every Groq call with a hard timeout and structured error logging.
+// Wraps every Gemini call with a hard timeout and structured error logging.
 // Returns the response text or throws — callers decide on fallback.
-const callGroq = (systemPrompt, userPrompt) => {
-  const groq = getGroq();
-  const groqCall = groq.chat.completions.create({
+const callGemini = (systemPrompt, userPrompt) => {
+  const model = getGenAI().getGenerativeModel({
     model: MODEL,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user",   content: userPrompt },
-    ],
-    temperature: 0.4,
-    max_tokens: 512,
+    systemInstruction: systemPrompt,
+    generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
   });
+
+  const geminiCall = model.generateContent(userPrompt).then(
+    (res) => res.response.text()?.trim() ?? ""
+  );
 
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error(`LLM call timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)
   );
 
-  return Promise.race([groqCall, timeout]).then(
-    (res) => res.choices[0]?.message?.content?.trim() ?? ""
-  );
+  return Promise.race([geminiCall, timeout]);
 };
 
 // ─── Pre-visit summary ────────────────────────────────────────────────────────
@@ -52,7 +48,7 @@ Do not include any text outside the JSON object.`;
   const userPrompt = `Patient symptoms: ${symptomText}`;
 
   try {
-    const raw = await callGroq(systemPrompt, userPrompt);
+    const raw = await callGemini(systemPrompt, userPrompt);
 
     // Strip markdown code fences if model wraps response in ```json ... ```
     const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
@@ -117,7 +113,7 @@ Keep the tone warm, reassuring, and concise (under 200 words).`;
   const userPrompt = `Clinical notes:\n${clinicalNotes}\n\nPrescription:\n${prescriptionText}`;
 
   try {
-    const summary = await callGroq(systemPrompt, userPrompt);
+    const summary = await callGemini(systemPrompt, userPrompt);
     if (!summary) throw new Error("LLM returned empty post-visit summary");
 
     logger.info("Post-visit summary generated successfully");

@@ -23,12 +23,14 @@ const getIntervalHours = (frequency) => {
 // ─── Medication reminders ─────────────────────────────────────────────────────
 const runMedicationReminders = async () => {
   const now = new Date();
-  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+  // Use 60 days to cover appointments with long prescriptions (up to 30 days duration
+  // from a slot that could be up to 30 days ago)
+  const sixtyDaysAgo = new Date(now - 60 * 24 * 60 * 60 * 1000);
 
   const appointments = await Appointment.find({
     status: "completed",
     "prescription.0": { $exists: true },
-    slotStart: { $gte: thirtyDaysAgo },
+    slotStart: { $gte: sixtyDaysAgo },
   })
     .populate("patientId", "name email")
     .lean();
@@ -51,7 +53,7 @@ const runMedicationReminders = async () => {
         .sort({ lastAttemptAt: -1 })
         .lean();
 
-      const referenceTime = lastReminder
+      const referenceTime = (lastReminder?.lastAttemptAt)
         ? new Date(lastReminder.lastAttemptAt)
         : new Date(appt.slotStart);
 
@@ -62,6 +64,9 @@ const runMedicationReminders = async () => {
         (now - new Date(appt.slotStart)) / (1000 * 60 * 60 * 24) >= item.durationDays;
       if (durationElapsed) continue;
 
+      const daysSinceAppointment = Math.floor((now - new Date(appt.slotStart)) / (1000 * 60 * 60 * 24));
+      const remainingDays = Math.max(0, item.durationDays - daysSinceAppointment);
+
       const notification = await Notification.create({
         type: "medication_reminder",
         recipientId: appt.patientId._id,
@@ -70,7 +75,7 @@ const runMedicationReminders = async () => {
         emailPayload: {
           to: appt.patientId.email,
           subject: `Medication Reminder - ${item.medicine}`,
-          body: `Dear ${appt.patientId.name},\n\nThis is your scheduled reminder to take your medication:\n\nMedicine: ${item.medicine}\nDosage: ${item.dosage}\nFrequency: ${item.frequency}\n\nRemaining duration: ${item.durationDays} day(s) from your appointment date.\n${item.notes ? `\nNotes: ${item.notes}` : ""}\n\nStay healthy!`,
+          body: `Dear ${appt.patientId.name},\n\nThis is your scheduled reminder to take your medication:\n\nMedicine: ${item.medicine}\nDosage: ${item.dosage}\nFrequency: ${item.frequency}\nRemaining: ${remainingDays} day(s) left.\n${item.notes ? `\nNotes: ${item.notes}` : ""}\n\nStay healthy!`,
         },
       });
 

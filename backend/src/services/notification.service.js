@@ -62,21 +62,55 @@ const queueConfirmationNotification = async (appointment) => {
   ]);
   if (!patient || !doctor) return;
 
+  // Dedup: skip if a confirmation was already queued or sent for this appointment
+  // Check per-recipient to avoid skipping the doctor notification if only the patient one exists
+  const [patientExists, doctorExists] = await Promise.all([
+    Notification.findOne({
+      appointmentId: appointment._id,
+      recipientId: patient._id,
+      type: "confirmation",
+      status: { $in: ["queued", "sent"] },
+    }).lean(),
+    Notification.findOne({
+      appointmentId: appointment._id,
+      recipientId: doctor._id,
+      type: "confirmation",
+      status: { $in: ["queued", "sent"] },
+    }).lean(),
+  ]);
+
   const slotDate = new Date(appointment.slotStart).toLocaleString("en-IN", {
     dateStyle: "full",
     timeStyle: "short",
   });
 
-  return queueAndDispatch({
-    type: "confirmation",
-    recipientId: patient._id,
-    appointmentId: appointment._id,
-    emailPayload: {
-      to: patient.email,
-      subject: "Appointment Confirmed",
-      body: `Dear ${patient.name},\n\nYour appointment with Dr. ${doctor.name} has been confirmed.\n\nDate & Time: ${slotDate}\n\nPlease arrive 10 minutes early. If you need to cancel, do so at least 2 hours in advance.\n\nThank you.`,
-    },
-  });
+  // Notify patient
+  if (!patientExists) {
+    await queueAndDispatch({
+      type: "confirmation",
+      recipientId: patient._id,
+      appointmentId: appointment._id,
+      emailPayload: {
+        to: patient.email,
+        subject: "Appointment Confirmed",
+        body: `Dear ${patient.name},\n\nYour appointment with Dr. ${doctor.name} has been confirmed.\n\nDate & Time: ${slotDate}\n\nPlease arrive 10 minutes early. If you need to cancel, do so at least 2 hours in advance.\n\nThank you.`,
+      },
+    });
+  }
+
+  // Notify doctor
+  if (!doctorExists) {
+    await queueAndDispatch({
+      type: "confirmation",
+      recipientId: doctor._id,
+      appointmentId: appointment._id,
+      emailPayload: {
+        to: doctor.email,
+        subject: "New Appointment Booked",
+        body: `Dear Dr. ${doctor.name},\n\nA new appointment has been booked by ${patient.name}.\n\nDate & Time: ${slotDate}\n\nPlease review the patient's symptoms in your dashboard.\n\nThank you.`,
+      },
+    });
+  }
 };
 
 // ─── Appointment reminder ─────────────────────────────────────────────────────
@@ -119,7 +153,8 @@ const queueCancellationNotification = async (appointment) => {
 
   const reason = appointment.cancellationReason || "No reason provided.";
 
-  return queueAndDispatch({
+  // Notify patient
+  await queueAndDispatch({
     type: "cancellation",
     recipientId: patient._id,
     appointmentId: appointment._id,
@@ -127,6 +162,18 @@ const queueCancellationNotification = async (appointment) => {
       to: patient.email,
       subject: "Appointment Cancelled",
       body: `Dear ${patient.name},\n\nYour appointment with Dr. ${doctor.name} on ${slotDate} has been cancelled.\n\nReason: ${reason}\n\nPlease rebook at your convenience.\n\nThank you.`,
+    },
+  });
+
+  // Notify doctor
+  await queueAndDispatch({
+    type: "cancellation",
+    recipientId: doctor._id,
+    appointmentId: appointment._id,
+    emailPayload: {
+      to: doctor.email,
+      subject: "Appointment Cancelled by Patient",
+      body: `Dear Dr. ${doctor.name},\n\nThe appointment with ${patient.name} on ${slotDate} has been cancelled.\n\nReason: ${reason}\n\nThank you.`,
     },
   });
 };
@@ -167,10 +214,10 @@ const processRetryQueue = async () => {
   const pending = await Notification.find({
     status: "queued",
     $or: [
-      { nextRetryAt: null },               // first attempt — never tried yet
-      { nextRetryAt: { $lte: now } },      // retry window has elapsed
+      { nextRetryAt: null, lastAttemptAt: null }, // never attempted yet — picked up by inline dispatch
+      { nextRetryAt: { $lte: now } },             // retry window has elapsed
     ],
-  }).limit(50); // process in batches to avoid memory spikes
+  }).limit(50);
 
   if (pending.length === 0) return;
 

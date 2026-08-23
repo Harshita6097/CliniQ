@@ -9,6 +9,8 @@ const {
   updateDoctor,
   updateDoctorValidation,
   deactivateDoctor,
+  reactivateDoctor,
+  updateDoctorUser,
   adminMarkLeave,
   leaveDoctorValidation,
   getAllAppointments,
@@ -26,6 +28,8 @@ router.get("/doctors", getAllDoctors);
 router.get("/doctors/:id", getDoctorById);
 router.patch("/doctors/:id", updateDoctorValidation, updateDoctor);
 router.delete("/doctors/:id", deactivateDoctor);
+router.patch("/doctors/:id/reactivate", reactivateDoctor);
+router.patch("/doctors/:id/user", updateDoctorUser);
 router.post("/doctors/:id/leave", leaveDoctorValidation, adminMarkLeave);
 
 // ─── System-wide appointment view ─────────────────────────────────────────────

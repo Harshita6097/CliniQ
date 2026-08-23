@@ -21,21 +21,25 @@ try { calendarService = require("../services/calendar.service"); } catch (_) {}
 
 exports.notesValidation = [
   param("id").isMongoId().withMessage("Valid appointment id is required"),
-  body("postVisitNotes").trim().notEmpty().withMessage("Post-visit notes are required"),
+  body("postVisitNotes")
+    .trim().notEmpty().withMessage("Post-visit notes are required")
+    .isLength({ max: 5000 }).withMessage("Post-visit notes must be under 5000 characters."),
   body("prescription").optional().isArray().withMessage("Prescription must be an array"),
   body("prescription.*.medicine").notEmpty().withMessage("Medicine name is required"),
   body("prescription.*.dosage").notEmpty().withMessage("Dosage is required"),
   body("prescription.*.frequency").notEmpty().withMessage("Frequency is required"),
-  body("prescription.*.durationDays").isInt({ min: 1 }).withMessage("Duration in days is required"),
+  body("prescription.*.durationDays").isInt({ min: 1 }).withMessage("Duration must be at least 1 day"),
 ];
 
 exports.leaveValidation = [
-  body("dates")
-    .isArray({ min: 1 })
-    .withMessage("dates must be a non-empty array of YYYY-MM-DD strings"),
+  body("dates").isArray({ min: 1 }).withMessage("dates must be a non-empty array of YYYY-MM-DD strings"),
   body("dates.*")
-    .matches(/^\d{4}-\d{2}-\d{2}$/)
-    .withMessage("Each date must be in YYYY-MM-DD format"),
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("Each date must be in YYYY-MM-DD format")
+    .custom((val) => {
+      const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+      if (new Date(val) < today) throw new Error(`Cannot mark leave for a past date: ${val}`);
+      return true;
+    }),
 ];
 
 // ─── GET /api/doctor/appointments ────────────────────────────────────────────

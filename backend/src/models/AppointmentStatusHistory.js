@@ -28,13 +28,10 @@ const appointmentStatusHistorySchema = new mongoose.Schema(
       ref: "User",
       default: null, // null for system-triggered changes (cron jobs)
     },
-    timestamp: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
     // No updatedAt needed — history entries are write-once
+    // createdAt stored as "timestamp" for semantic clarity
     timestamps: { createdAt: "timestamp", updatedAt: false },
   }
 );

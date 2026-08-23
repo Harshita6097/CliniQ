@@ -1,35 +1,40 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminGetAllAppointments } from "../../api/admin.api";
-import { formatSlot } from "../../utils/dateUtils";
+import { formatSlot, formatDate } from "../../utils/dateUtils";
 import { statusClasses, statusLabel } from "../../utils/statusBadge";
-import { format } from "date-fns";
 
 const STATUSES = ["", "confirmed", "completed", "cancelled", "held"];
 
 export default function AllAppointments() {
-  const [filters, setFilters] = useState({ status: "", doctorId: "", patientId: "", from: "", to: "" });
+  const [filters, setFilters] = useState({ status: "", doctorName: "", patientName: "", from: "", to: "" });
   const [applied, setApplied] = useState({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["adminAllAppts", applied],
     queryFn: () => {
       const params = {};
-      if (applied.status)    params.status    = applied.status;
-      if (applied.doctorId)  params.doctorId  = applied.doctorId;
-      if (applied.patientId) params.patientId = applied.patientId;
-      if (applied.from)      params.from      = applied.from;
-      if (applied.to)        params.to        = applied.to;
+      if (applied.status) params.status = applied.status;
+      if (applied.from)   params.from   = applied.from;
+      if (applied.to)     params.to     = applied.to;
       return adminGetAllAppointments(params);
     },
   });
 
-  const appointments = data?.appointments ?? [];
-  const total        = data?.total ?? 0;
+  // Client-side name filtering — avoids needing ObjectId lookups in the filter form
+  const allAppointments = data?.appointments ?? [];
+  const appointments = allAppointments.filter(appt => {
+    const dn = applied.doctorName?.toLowerCase() ?? "";
+    const pn = applied.patientName?.toLowerCase() ?? "";
+    if (dn && !appt.doctorId?.name?.toLowerCase().includes(dn)) return false;
+    if (pn && !appt.patientId?.name?.toLowerCase().includes(pn)) return false;
+    return true;
+  });
+  const total = appointments.length;
 
   const handleApply = (e) => { e.preventDefault(); setApplied({ ...filters }); };
   const handleReset = () => {
-    const empty = { status: "", doctorId: "", patientId: "", from: "", to: "" };
+    const empty = { status: "", doctorName: "", patientName: "", from: "", to: "" };
     setFilters(empty); setApplied({});
   };
 
@@ -56,6 +61,22 @@ export default function AllAppointments() {
             >
               {STATUSES.map(s => <option key={s} value={s}>{s || "All statuses"}</option>)}
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Doctor name</label>
+            <input
+              type="text" value={filters.doctorName} placeholder="Search doctor…"
+              onChange={(e) => setFilters(f => ({ ...f, doctorName: e.target.value }))}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Patient name</label>
+            <input
+              type="text" value={filters.patientName} placeholder="Search patient…"
+              onChange={(e) => setFilters(f => ({ ...f, patientName: e.target.value }))}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 focus:bg-white transition-colors"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">From date</label>
@@ -145,7 +166,7 @@ export default function AllAppointments() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-400 text-xs whitespace-nowrap">
-                      {format(new Date(appt.createdAt), "dd MMM yyyy")}
+                      {formatDate(appt.createdAt)}
                     </td>
                   </tr>
                 ))}

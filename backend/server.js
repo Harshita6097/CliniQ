@@ -26,14 +26,6 @@ app.use(
     credentials: true,
   })
 );
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
-    message: { message: "Too many requests, please try again later." },
-  })
-);
-
 // ─── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -49,6 +41,16 @@ app.use((req, _res, next) => {
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// ─── API Rate Limiter (applied only to /api routes) ───────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === "production" ? 100 : 500,
+  message: { message: "Too many requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api", apiLimiter);
 
 // ─── API Routes (mounted as tasks are completed) ──────────────────────────────
 app.use("/api/auth",     require("./src/routes/auth.routes"));

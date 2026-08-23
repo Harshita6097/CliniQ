@@ -34,10 +34,13 @@ router.get("/oauth/callback", async (req, res) => {
   try {
     const tokens = await exchangeCodeForTokens(code);
 
+    // Merge tokens — Google only returns refresh_token on first consent,
+    // so preserve the existing one if the new response omits it.
+    const existingUser = await User.findById(userId).select("googleTokens").lean();
     await User.findByIdAndUpdate(userId, {
       googleTokens: {
         access_token:  tokens.access_token,
-        refresh_token: tokens.refresh_token,
+        refresh_token: tokens.refresh_token ?? existingUser?.googleTokens?.refresh_token ?? null,
         expiry_date:   tokens.expiry_date,
       },
     });

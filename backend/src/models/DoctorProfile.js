@@ -55,6 +55,7 @@ const doctorProfileSchema = new mongoose.Schema(
     consultationFee: {
       type: Number,
       default: 0,
+      min: [0, "Consultation fee cannot be negative"],
     },
   },
   { timestamps: true }

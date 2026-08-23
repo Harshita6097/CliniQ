@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getDoctors, holdAppointment, confirmAppointment } from "../../api/appointment.api";
+import { getDoctors, holdAppointment, confirmAppointment, cancelAppointment } from "../../api/appointment.api";
 import useSlots from "../../hooks/useSlots";
 import { formatSlot } from "../../utils/dateUtils";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
-
-const today = format(new Date(), "yyyy-MM-dd");
 
 const STEPS = ["Choose Doctor", "Pick Slot", "Symptoms"];
 
@@ -112,6 +110,7 @@ function StepPickDoctor({ onSelect }) {
 
 // ─── Step 2 ───────────────────────────────────────────────────────────────────
 function StepPickSlot({ doctor, onHeld, onBack }) {
+  const today = format(new Date(), "yyyy-MM-dd");
   const [date, setDate]       = useState(today);
   const [loading, setLoading] = useState(false);
   const { data: slots = [], isLoading, isFetching } = useSlots(doctor.userId?._id, date);
@@ -248,10 +247,11 @@ function StepSymptomForm({ appointment, onBack }) {
             onChange={(e) => setText(e.target.value)}
             required
             rows={6}
+            maxLength={2000}
             placeholder="Describe your symptoms, how long you've had them, any medications you're taking, and relevant medical history…"
             className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none bg-gray-50 focus:bg-white transition-colors leading-relaxed"
           />
-          <span className="absolute bottom-3 right-4 text-xs text-gray-300">{text.length} chars</span>
+          <span className={`absolute bottom-3 right-4 text-xs ${text.length > 1800 ? "text-amber-500 font-semibold" : "text-gray-300"}`}>{text.length}/2000</span>
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex gap-3">
@@ -302,7 +302,12 @@ export default function BookAppointment() {
         {step === 3 && heldAppointment && (
           <StepSymptomForm
             appointment={heldAppointment}
-            onBack={() => setStep(2)}
+            onBack={async () => {
+              // Release the held slot so it becomes available again immediately
+              try { await cancelAppointment(heldAppointment.id, "Patient went back to change slot"); } catch (_) {}
+              setHeld(null);
+              setStep(2);
+            }}
           />
         )}
       </div>

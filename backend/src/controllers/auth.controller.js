@@ -27,15 +27,21 @@ const sendTokenResponse = (user, statusCode, res) => {
 
 exports.registerValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
-  body("email").isEmail().withMessage("Valid email is required").normalizeEmail(),
-  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  body("email").isEmail().withMessage("Valid email is required").normalizeEmail({ gmail_remove_dots: false }),
+  body("password")
+    .isLength({ min: 6, max: 72 })
+    .withMessage("Password must be 6–72 characters"),
+  body("phone")
+    .optional({ checkFalsy: true })
+    .matches(/^[\+]?[\d\s\-\(\)]{7,20}$/)
+    .withMessage("Invalid phone number format"),
   body("role")
     .isIn(["patient", "doctor"])
     .withMessage("Role must be patient or doctor — admin accounts are created manually"),
 ];
 
 exports.loginValidation = [
-  body("email").isEmail().withMessage("Valid email is required").normalizeEmail(),
+  body("email").isEmail().withMessage("Valid email is required").normalizeEmail({ gmail_remove_dots: false }),
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
@@ -126,8 +132,8 @@ exports.changePassword = async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword)
       return res.status(400).json({ message: "Both currentPassword and newPassword are required." });
-    if (newPassword.length < 6)
-      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    if (newPassword.length < 6 || newPassword.length > 72)
+      return res.status(400).json({ message: "New password must be 6–72 characters." });
 
     const user = await User.findById(req.user.id).select("+passwordHash");
     if (!(await user.comparePassword(currentPassword)))

@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 
 export default function ChangePasswordModal({ onClose, accentColor = "teal" }) {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [showFields, setShowFields] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
+  const toggleShow = (key) => setShowFields(f => ({ ...f, [key]: !f[key] }));
 
   const accent = {
     teal:   { ring: "focus:ring-teal-400",   btn: "from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600",     shadow: "shadow-teal-200" },
@@ -21,6 +23,7 @@ export default function ChangePasswordModal({ onClose, accentColor = "teal" }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.newPassword.length < 6) { toast.error("New password must be at least 6 characters."); return; }
+    if (form.newPassword.length > 72) { toast.error("Password must be 72 characters or fewer."); return; }
     if (form.newPassword !== form.confirmPassword) { toast.error("Passwords do not match."); return; }
     mutate();
   };
@@ -44,14 +47,20 @@ export default function ChangePasswordModal({ onClose, accentColor = "teal" }) {
           ].map(({ label, key }) => (
             <div key={key}>
               <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-              <input
-                type="password"
-                value={form[key]}
-                onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
-                required
-                className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 ${accent.ring} bg-gray-50 focus:bg-white transition-colors`}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showFields[key] ? "text" : "password"}
+                  value={form[key]}
+                  onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  required
+                  className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-12 text-sm focus:outline-none focus:ring-2 ${accent.ring} bg-gray-50 focus:bg-white transition-colors`}
+                  placeholder="••••••••"
+                />
+                <button type="button" onClick={() => toggleShow(key)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors text-xs font-medium select-none">
+                  {showFields[key] ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
           ))}
 

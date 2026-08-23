@@ -119,7 +119,7 @@ export default function PatientLayout() {
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-white flex flex-col shadow-2xl">
+          <aside className="absolute left-0 top-0 h-full w-64 bg-gradient-to-b from-teal-700 via-teal-800 to-cyan-900 flex flex-col shadow-2xl">
             <SidebarContent />
           </aside>
         </div>

@@ -52,8 +52,8 @@ export default function AdminDashboard() {
         {[
           { label: "Patients",    value: patients.length,  color: "from-blue-400 to-blue-600",     icon: "🧑‍🤝‍🧑" },
           { label: "Doctors",     value: doctors.length,   color: "from-emerald-400 to-emerald-600", icon: "👨‍⚕️" },
-          { label: "Notif Queued", value: summary.queued,  color: "from-amber-400 to-amber-600",   icon: "📬" },
-          { label: "Notif Failed", value: summary.failed,  color: "from-red-400 to-red-600",       icon: "⚠️" },
+          { label: "Emails Queued", value: summary.queued, color: "from-amber-400 to-amber-600", icon: "📬" },
+          { label: "Emails Failed", value: summary.failed, color: "from-red-400 to-red-600",     icon: "⚠️" },
         ].map(({ label, value, color, icon }) => (
           <div key={label} className={`rounded-2xl p-5 bg-gradient-to-br ${color} flex items-center gap-4 shadow-md`}>
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">

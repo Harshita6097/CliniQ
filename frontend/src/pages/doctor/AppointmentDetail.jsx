@@ -50,7 +50,10 @@ export default function DoctorAppointmentDetail() {
   if (isError) return (
     <div className="text-center py-20">
       <div className="text-4xl mb-3">⚠️</div>
-      <p className="text-sm text-red-500 font-medium">Failed to load appointment.</p>
+      <p className="text-sm text-red-500 font-medium">Appointment not found or you don't have access to it.</p>
+      <button onClick={() => navigate(-1)} className="mt-4 text-sm font-medium text-indigo-600 hover:underline">
+        ← Go back
+      </button>
     </div>
   );
 
@@ -194,14 +197,18 @@ export default function DoctorAppointmentDetail() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Clinical Notes *</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              required
-              rows={4}
-              placeholder="Diagnosis, observations, follow-up instructions…"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none bg-gray-50 focus:bg-white transition-colors"
-            />
+            <div className="relative">
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                required
+                rows={4}
+                maxLength={5000}
+                placeholder="Diagnosis, observations, follow-up instructions…"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none bg-gray-50 focus:bg-white transition-colors"
+              />
+              <span className={`absolute bottom-3 right-4 text-xs ${notes.length > 4500 ? "text-amber-500 font-semibold" : "text-gray-300"}`}>{notes.length}/5000</span>
+            </div>
           </div>
 
           {/* Prescription builder */}

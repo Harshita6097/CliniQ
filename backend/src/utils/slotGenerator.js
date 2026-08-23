@@ -27,6 +27,9 @@ const generateSlotsForDate = (date, workingHours, slotDurationMins) => {
   let cursor = new Date(Date.UTC(year, month - 1, day, startHour, startMin));
   const dayEnd = new Date(Date.UTC(year, month - 1, day, endHour, endMin));
 
+  // Guard: if start >= end (misconfigured working hours), return empty
+  if (cursor >= dayEnd) return [];
+
   const slots = [];
   while (true) {
     const slotEnd = addMinutes(cursor, slotDurationMins);

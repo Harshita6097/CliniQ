@@ -12,11 +12,12 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401, clear auth state and redirect to login
+// On 401, clear auth state and redirect to login (but not for auth endpoints themselves)
 axiosInstance.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const isAuthEndpoint = err.config?.url?.startsWith("/auth/");
+    if (err.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";

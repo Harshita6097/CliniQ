@@ -5,7 +5,7 @@ const prescriptionItemSchema = new mongoose.Schema(
     medicine: { type: String, required: true, trim: true },
     dosage: { type: String, required: true, trim: true },   // e.g. "500mg"
     frequency: { type: String, required: true, trim: true }, // e.g. "twice daily"
-    durationDays: { type: Number, required: true },
+    durationDays: { type: Number, required: true, min: [1, "Duration must be at least 1 day"] },
     notes: { type: String, default: null },
   },
   { _id: false }

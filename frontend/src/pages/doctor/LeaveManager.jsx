@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getDoctorProfile, markLeave, removeLeave } from "../../api/doctor.api";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 
-const today = format(new Date(), "yyyy-MM-dd");
-
 export default function LeaveManager() {
+  const today = format(new Date(), "yyyy-MM-dd");
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState("");
   const [pendingDates, setPending]      = useState([]);
@@ -101,7 +100,7 @@ export default function LeaveManager() {
                   key={d}
                   className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full"
                 >
-                  {format(new Date(d), "dd MMM yyyy")}
+                  {format(parseISO(d), "dd MMM yyyy")}
                   <button
                     onClick={() => setPending(p => p.filter(x => x !== d))}
                     className="text-indigo-400 hover:text-indigo-700 font-bold leading-none ml-0.5"
@@ -134,7 +133,7 @@ export default function LeaveManager() {
             {conflictInfo.map((a) => (
               <li key={a.id} className="flex items-center gap-2 text-xs text-amber-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                {a.patientName} — {format(new Date(a.slotStart), "dd MMM yyyy, hh:mm a")}
+                {a.patientName} — {format(parseISO(a.slotStart.substring(0, 10)), "dd MMM yyyy")}
               </li>
             ))}
           </ul>
@@ -171,10 +170,10 @@ export default function LeaveManager() {
               <li key={d} className="flex items-center justify-between bg-indigo-50/50 rounded-xl px-4 py-3 border border-indigo-100">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-bold">
-                    {format(new Date(d), "dd")}
+                    {format(parseISO(d), "dd")}
                   </div>
                   <span className="text-sm font-medium text-gray-700">
-                    {format(new Date(d), "MMMM yyyy (EEEE)")}
+                    {format(parseISO(d), "MMMM yyyy (EEEE)")}
                   </span>
                 </div>
                 <button

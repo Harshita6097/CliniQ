@@ -14,24 +14,27 @@ try { calendarService = require("../services/calendar.service"); } catch (_) {}
 
 exports.createDoctorValidation = [
   body("name").trim().notEmpty().withMessage("Name is required"),
-  body("email").isEmail().withMessage("Valid email is required").normalizeEmail(),
-  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  body("email").isEmail().withMessage("Valid email is required").normalizeEmail({ gmail_remove_dots: false }),
+  body("password").isLength({ min: 6, max: 72 }).withMessage("Password must be 6–72 characters"),
   body("specialization").trim().notEmpty().withMessage("Specialization is required"),
-  body("slotDurationMins")
-    .isInt({ min: 5 })
-    .withMessage("Slot duration must be at least 5 minutes"),
-  body("workingHours")
-    .isArray({ min: 1 })
-    .withMessage("workingHours must be a non-empty array"),
+  body("slotDurationMins").isInt({ min: 5 }).withMessage("Slot duration must be at least 5 minutes"),
+  body("consultationFee").optional().isFloat({ min: 0 }).withMessage("Consultation fee cannot be negative"),
+  body("workingHours").isArray({ min: 1 }).withMessage("workingHours must be a non-empty array"),
   body("workingHours.*.day")
     .isIn(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
     .withMessage("Invalid day in workingHours"),
-  body("workingHours.*.start")
-    .matches(/^\d{2}:\d{2}$/)
-    .withMessage("workingHours start must be HH:mm"),
-  body("workingHours.*.end")
-    .matches(/^\d{2}:\d{2}$/)
-    .withMessage("workingHours end must be HH:mm"),
+  body("workingHours.*.start").matches(/^\d{2}:\d{2}$/).withMessage("workingHours start must be HH:mm"),
+  body("workingHours.*.end").matches(/^\d{2}:\d{2}$/).withMessage("workingHours end must be HH:mm"),
+  body("workingHours").custom((wh) => {
+    for (const entry of wh) {
+      if (entry.start >= entry.end)
+        throw new Error(`Working hours for ${entry.day}: start time must be before end time.`);
+    }
+    const days = wh.map(e => e.day);
+    if (new Set(days).size !== days.length)
+      throw new Error("Duplicate days found in workingHours. Each day must appear only once.");
+    return true;
+  }),
 ];
 
 exports.updateDoctorValidation = [
@@ -39,17 +42,30 @@ exports.updateDoctorValidation = [
   body("specialization").optional().trim().notEmpty(),
   body("slotDurationMins").optional().isInt({ min: 5 }),
   body("workingHours").optional().isArray({ min: 1 }),
-  body("consultationFee").optional().isFloat({ min: 0 }),
+  body("consultationFee").optional().isFloat({ min: 0 }).withMessage("Consultation fee cannot be negative"),
+  body("workingHours").optional().custom((wh) => {
+    if (!Array.isArray(wh)) return true;
+    for (const entry of wh) {
+      if (entry.start >= entry.end)
+        throw new Error(`Working hours for ${entry.day}: start time must be before end time.`);
+    }
+    const days = wh.map(e => e.day);
+    if (new Set(days).size !== days.length)
+      throw new Error("Duplicate days found in workingHours.");
+    return true;
+  }),
 ];
 
 exports.leaveDoctorValidation = [
   param("id").isMongoId().withMessage("Valid doctor user id is required"),
-  body("dates")
-    .isArray({ min: 1 })
-    .withMessage("dates must be a non-empty array of YYYY-MM-DD strings"),
+  body("dates").isArray({ min: 1 }).withMessage("dates must be a non-empty array of YYYY-MM-DD strings"),
   body("dates.*")
-    .matches(/^\d{4}-\d{2}-\d{2}$/)
-    .withMessage("Each date must be in YYYY-MM-DD format"),
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("Each date must be in YYYY-MM-DD format")
+    .custom((val) => {
+      const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+      if (new Date(val) < today) throw new Error(`Cannot mark leave for a past date: ${val}`);
+      return true;
+    }),
 ];
 
 // ─── Helper: cancel appointments + notify patients ────────────────────────────
@@ -118,10 +134,6 @@ exports.createDoctor = async (req, res, next) => {
       specialization, workingHours, slotDurationMins,
       consultationFee, qualifications, bio,
     } = req.body;
-
-    const existing = await User.findOne({ email });
-    if (existing)
-      return res.status(409).json({ message: "Email already registered." });
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -230,6 +242,58 @@ exports.deactivateDoctor = async (req, res, next) => {
 
     logger.info(`Admin deactivated doctor: ${req.params.id}`);
     res.status(200).json({ message: "Doctor account deactivated." });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── PATCH /api/admin/doctors/:id/reactivate ─────────────────────────────────
+// Reactivate a previously deactivated doctor account
+exports.reactivateDoctor = async (req, res, next) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id, role: "doctor" },
+      { isActive: true },
+      { new: true }
+    );
+    if (!user)
+      return res.status(404).json({ message: "Doctor not found." });
+
+    logger.info(`Admin reactivated doctor: ${req.params.id}`);
+    res.status(200).json({ message: "Doctor account reactivated." });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── PATCH /api/admin/doctors/:id/user ───────────────────────────────────────
+// Update a doctor's name and/or email (User record, not profile)
+exports.updateDoctorUser = async (req, res, next) => {
+  try {
+    const { name, email } = req.body;
+    if (!name && !email)
+      return res.status(400).json({ message: "Provide at least one field: name or email." });
+
+    const updates = {};
+    if (name)  updates.name  = name;
+    if (email) {
+      // Validate email format before saving
+      if (!/^\S+@\S+\.\S+$/.test(email))
+        return res.status(400).json({ message: "Invalid email format." });
+      updates.email = email.toLowerCase().trim();
+    }
+
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id, role: "doctor" },
+      updates,
+      { new: true, runValidators: true }
+    ).select("-passwordHash");
+
+    if (!user)
+      return res.status(404).json({ message: "Doctor not found." });
+
+    logger.info(`Admin updated doctor user record: ${req.params.id}`);
+    res.status(200).json({ message: "Doctor user record updated.", user });
   } catch (err) {
     next(err);
   }

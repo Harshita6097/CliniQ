@@ -13,8 +13,9 @@ export const useCancelAppointment = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }) => cancelAppointment(id, reason),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment", id] });
       toast.success("Appointment cancelled.");
     },
     onError: (err) => toast.error(err.response?.data?.message || "Cancellation failed."),

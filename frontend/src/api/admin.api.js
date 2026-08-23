@@ -13,6 +13,9 @@ export const adminUpdateDoctor   = (id, data) =>
 export const adminDeactivateDoctor = (id)     =>
   axiosInstance.delete(`/admin/doctors/${id}`).then(r => r.data);
 
+export const adminReactivateDoctor = (id)     =>
+  axiosInstance.patch(`/admin/doctors/${id}/reactivate`).then(r => r.data);
+
 export const adminMarkLeave      = (id, dates) =>
   axiosInstance.post(`/admin/doctors/${id}/leave`, { dates }).then(r => r.data);
 
