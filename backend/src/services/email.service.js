@@ -28,14 +28,14 @@ const getTransporter = () => {
 const sendEmail = async ({ to, subject, body }) => {
   const transporter = getTransporter();
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || "Healthcare App <noreply@healthcare.app>",
+    from: process.env.EMAIL_FROM || "CliniQ <noreply@cliniq.app>",
     to,
     subject,
     // body is plain text; wrap in minimal HTML for email clients
     html: `<div style="font-family:sans-serif;max-width:600px;margin:auto">
       <p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
       <hr/>
-      <small style="color:#888">Healthcare Appointment System — do not reply to this email.</small>
+      <small style="color:#888">CliniQ — do not reply to this email.</small>
     </div>`,
     text: body,
   });

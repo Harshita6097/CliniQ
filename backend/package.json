@@ -1,7 +1,7 @@
 {
-  "name": "healthcare-appointment-backend",
+  "name": "cliniq-backend",
   "version": "1.0.0",
-  "description": "Backend for Healthcare Appointment & Follow-up Manager",
+  "description": "Backend for CliniQ — Healthcare Appointment & Follow-up Manager",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

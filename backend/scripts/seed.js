@@ -114,7 +114,7 @@ const run = async () => {
     process.exit(1);
   }
 
-  console.log("\n Healthcare Appointment System — Seed Script\n");
+  console.log("\n CliniQ — Seed Script\n");
 
   try {
     await mongoose.connect(process.env.MONGO_URI);

@@ -1,7 +1,7 @@
 {
-  "name": "healthcare-appointment-frontend",
+  "name": "cliniq-frontend",
   "version": "1.0.0",
-  "description": "Frontend for Healthcare Appointment & Follow-up Manager",
+  "description": "Frontend for CliniQ — Healthcare Appointment & Follow-up Manager",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

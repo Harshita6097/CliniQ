@@ -1,4 +1,4 @@
-# Healthcare Appointment & Follow-up Manager
+# CliniQ — Healthcare Appointment & Follow-up Manager
 
 > Full-stack healthcare appointment platform with patient, doctor, and admin portals.
 
@@ -20,7 +20,7 @@
 ## Project Structure
 
 ```
-healthcare-appointment-system/
+cliniq/
 ├── backend/
 │   ├── scripts/          # seed.js — first admin + sample doctor
 │   ├── src/
@@ -71,7 +71,7 @@ healthcare-appointment-system/
 
 ```bash
 git clone <repo-url>
-cd healthcare-appointment-system
+cd cliniq
 
 # Backend
 cd backend && npm install
