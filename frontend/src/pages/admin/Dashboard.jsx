@@ -37,12 +37,12 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
-      <div className="relative rounded-lg bg-gradient-to-r from-admin-dark via-admin to-admin-light p-8 overflow-hidden shadow-pop chart-paper">
+      <div className="relative rounded-lg bg-admin-dark p-8 overflow-hidden shadow-pop">
         <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
-          <p className="text-admin-tint text-sm font-medium mb-1">{greeting}</p>
+          <p className="text-white/70 text-sm font-medium mb-1">{greeting}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-1">{user.name}</h1>
-          <p className="text-admin-tint text-sm">System overview — everything at a glance</p>
+          <p className="text-white/70 text-sm">System overview — everything at a glance</p>
         </div>
       </div>
 
@@ -54,9 +54,9 @@ export default function AdminDashboard() {
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> },
             { label: 'Doctors',       value: doctors.length,   tint: 'bg-doctor-tint',  text: 'text-doctor-dark',  href: '/admin/doctors',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 2h5" /></svg> },
-            { label: 'Emails Queued', value: summary.queued,   tint: 'bg-warn-tint',    text: 'text-warn',         href: '/admin/notifications',
+            { label: 'Emails Queued', value: summary.queued,   tint: 'bg-warn-tint',    text: 'text-doctor-dark',  href: '/admin/notifications',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="M22 6l-10 7L2 6" /></svg> },
-            { label: 'Emails Failed', value: summary.failed,   tint: 'bg-danger-tint',  text: 'text-danger',       href: '/admin/notifications',
+            { label: 'Emails Failed', value: summary.failed,   tint: 'bg-danger-tint',  text: 'text-[#7a2e29]',    href: '/admin/notifications',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg> },
           ].map(({ label, value, tint, text, href, icon }) => (
             <Link key={label} to={href} className={`rounded-lg p-5 ${tint} flex items-center gap-4 border border-stone/50 hover:shadow-pop hover:-translate-y-0.5 transition-all duration-150`}>
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
               <h2 className="font-display text-base font-semibold text-ink">Recent Appointments</h2>
               <p className="text-xs text-ink-soft mt-0.5">Latest confirmed bookings</p>
             </div>
-            <Link to="/admin/appointments" className="text-xs font-semibold text-admin hover:underline">View all →</Link>
+            <Link to="/admin/appointments" className="text-xs font-semibold text-admin-dark hover:underline">View all →</Link>
           </div>
           {apptLoading ? <div className="p-6"><SkeletonLoader variant="row" count={3} /></div> : recentAppts.length === 0 ? (
             <div className="px-6 py-10 text-center"><p className="text-sm text-ink-soft">No confirmed appointments</p></div>
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
               <h2 className="font-display text-base font-semibold text-ink">Users</h2>
               <p className="text-xs text-ink-soft mt-0.5">Manage active status</p>
             </div>
-            <Link to="/admin/doctors" className="text-xs font-semibold text-admin hover:underline">Manage doctors →</Link>
+            <Link to="/admin/doctors" className="text-xs font-semibold text-admin-dark hover:underline">Manage doctors →</Link>
           </div>
           {userLoading ? <div className="p-6"><SkeletonLoader variant="row" count={4} /></div> : users.length === 0 ? (
             <div className="px-6 py-10 text-center"><p className="text-sm text-ink-soft">No users found</p></div>
@@ -121,10 +121,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full ${u.isActive ? 'bg-ok-tint text-ok' : 'bg-danger-tint text-danger'}`}>
+                    <span className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full ${u.isActive ? 'bg-ok-tint text-[#3a5c38]' : 'bg-danger-tint text-[#7a2e29]'}`}>
                       {u.isActive ? 'active' : 'inactive'}
                     </span>
-                    <button onClick={() => setToggleTarget(u)} className="text-xs font-semibold text-admin bg-admin-tint hover:bg-admin-tint2 px-2.5 py-1 rounded-md transition-colors">Toggle</button>
+                    <button onClick={() => setToggleTarget(u)} className="text-xs font-semibold text-admin-dark bg-admin-tint hover:bg-admin-tint2 px-2.5 py-1 rounded-md transition-colors">Toggle</button>
                   </div>
                 </li>
               ))}
@@ -139,18 +139,18 @@ export default function AdminDashboard() {
               <h2 className="font-display text-base font-semibold text-ink">Notification Summary</h2>
               <p className="text-xs text-ink-soft mt-0.5">Email delivery status</p>
             </div>
-            <Link to="/admin/notifications" className="text-xs font-semibold text-admin hover:underline">View all →</Link>
+            <Link to="/admin/notifications" className="text-xs font-semibold text-admin-dark hover:underline">View all →</Link>
           </div>
           {notifLoading ? <div className="p-6"><SkeletonLoader variant="row" count={2} /></div> : (
             <div className="px-6 py-5 grid grid-cols-3 gap-4">
               {[
-                { label: 'Queued', value: summary.queued, tint: 'bg-warn-tint', text: 'text-warn' },
-                { label: 'Sent',   value: summary.sent,   tint: 'bg-ok-tint',   text: 'text-ok' },
-                { label: 'Failed', value: summary.failed, tint: 'bg-danger-tint', text: 'text-danger' },
+                { label: 'Queued', value: summary.queued, tint: 'bg-warn-tint',   text: 'text-doctor-dark' },
+                { label: 'Sent',   value: summary.sent,   tint: 'bg-ok-tint',     text: 'text-[#3a5c38]' },
+                { label: 'Failed', value: summary.failed, tint: 'bg-danger-tint', text: 'text-[#7a2e29]' },
               ].map(({ label, value, tint, text }) => (
                 <div key={label} className={`rounded-md p-4 ${tint} text-center`}>
                   <p className={`font-mono text-2xl font-bold ${text}`}>{value}</p>
-                  <p className={`text-xs font-semibold ${text} opacity-80 mt-0.5`}>{label}</p>
+                  <p className={`text-xs font-semibold ${text} mt-0.5`}>{label}</p>
                 </div>
               ))}
             </div>

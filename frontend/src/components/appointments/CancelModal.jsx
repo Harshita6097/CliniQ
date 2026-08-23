@@ -15,12 +15,12 @@ export default function CancelModal({ isOpen, onClose, onConfirm, isPending }) {
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Cancel appointment?">
       <div className="mb-5 flex gap-3 items-start bg-danger-tint border border-danger/30 rounded-md px-4 py-3">
-        <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-danger shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-[#7a2e29] shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
         </svg>
         <div>
-          <p className="text-sm font-semibold text-danger">This action cannot be undone</p>
-          <p className="text-xs text-danger/80 mt-0.5">The slot will be released and both you and the doctor will be notified by email.</p>
+          <p className="text-sm font-semibold text-[#7a2e29]">This action cannot be undone</p>
+          <p className="text-xs text-[#7a2e29]/80 mt-0.5">The slot will be released and both you and the doctor will be notified by email.</p>
         </div>
       </div>
       <div className="mb-5">

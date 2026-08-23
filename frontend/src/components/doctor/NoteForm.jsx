@@ -16,7 +16,7 @@ export default function NoteForm({ notes, setNotes }) {
           rows={5}
           maxLength={5000}
           placeholder="Diagnosis, observations, follow-up instructions…"
-          className="w-full rounded-md border border-stone px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-doctor resize-none bg-paper text-ink"
+          className="w-full rounded-md border border-stone px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-doctor resize-none bg-paper focus:bg-white text-ink placeholder:text-stone-dark"
         />
         <span className={`absolute bottom-3 right-4 font-mono text-[11px] ${counterColor}`}>
           {len}/5000

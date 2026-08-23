@@ -29,13 +29,13 @@ export default function AdminAppointmentDetail() {
   );
 
   return (
-    <div className="max-w-2xl space-y-5 animate-fadeIn">
+    <div className="max-w-4xl space-y-5 animate-fadeIn">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-admin hover:text-admin-dark font-semibold">
         <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 19l-7-7 7-7" /></svg>
         Back
       </button>
 
-      <div className="relative rounded-lg bg-gradient-to-r from-admin-dark via-admin to-admin-light p-6 text-white shadow-pop overflow-hidden chart-paper">
+      <div className="relative rounded-lg bg-admin-dark p-6 text-white shadow-pop overflow-hidden">
         <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
           <div className="flex items-start justify-between mb-4">
@@ -55,8 +55,8 @@ export default function AdminAppointmentDetail() {
 
       {appt.cancellationReason && (
         <div className="bg-danger-tint border border-danger/30 rounded-md px-5 py-4 flex gap-3">
-          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-danger shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          <div><p className="text-sm font-semibold text-danger">Cancellation Reason</p><p className="text-sm text-danger/80 mt-0.5">{appt.cancellationReason}</p></div>
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-[#7a2e29] shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          <div><p className="text-sm font-semibold text-[#7a2e29]">Cancellation Reason</p><p className="text-sm text-[#7a2e29]/80 mt-0.5">{appt.cancellationReason}</p></div>
         </div>
       )}
 

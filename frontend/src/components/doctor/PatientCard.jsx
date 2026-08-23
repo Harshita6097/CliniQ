@@ -5,7 +5,7 @@ import PulseThread from '../common/PulseThread.jsx';
 export default function PatientCard({ appt }) {
   const initial = appt.patientId?.name?.[0]?.toUpperCase() ?? 'P';
   return (
-    <div className="relative rounded-lg bg-gradient-to-r from-doctor-dark to-doctor overflow-hidden chart-paper shadow-pop text-white p-6">
+    <div className="relative rounded-lg bg-doctor-dark overflow-hidden shadow-pop text-white p-6">
       <PulseThread color="#ffffff" opacity={0.25} />
       <div className="relative">
         <div className="flex items-start justify-between mb-4">

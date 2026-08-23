@@ -39,12 +39,12 @@ export default function DoctorDashboard() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
-      <div className="relative rounded-lg bg-gradient-to-r from-doctor-dark via-doctor to-doctor-light p-8 overflow-hidden shadow-pop chart-paper">
+      <div className="relative rounded-lg bg-doctor-dark p-8 overflow-hidden shadow-pop">
         <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
-          <p className="text-doctor-tint text-sm font-medium mb-1">{greeting}, Dr. {user.name?.split(' ')[0]}</p>
+          <p className="text-white/70 text-sm font-medium mb-1">{greeting}, Dr. {user.name?.split(' ')[0]}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-1">Your Schedule</h1>
-          <p className="font-mono text-xs text-doctor-tint">{formatDate(new Date())}</p>
+          <p className="font-mono text-xs text-white/70">{formatDate(new Date())}</p>
         </div>
       </div>
 
@@ -52,11 +52,11 @@ export default function DoctorDashboard() {
       {isLoading ? <SkeletonLoader variant="stat" count={3} /> : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: "Today's Patients", value: todayList.length,  tint: 'bg-doctor-tint',  text: 'text-doctor-dark',
+            { label: "Today's Patients", value: todayList.length,   tint: 'bg-doctor-tint',  text: 'text-doctor-dark',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 2h5" /></svg> },
-            { label: 'Upcoming',         value: upcomingList.length, tint: 'bg-warn-tint',  text: 'text-warn',
+            { label: 'Upcoming',         value: upcomingList.length, tint: 'bg-warn-tint',   text: 'text-doctor-dark',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg> },
-            { label: 'Completed',        value: completed.length,  tint: 'bg-sage-tint',   text: 'text-sage',
+            { label: 'Completed',        value: completed.length,    tint: 'bg-sage-tint',  text: 'text-[#3a5c38]',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2m-6 9l2 2 4-4" /></svg> },
           ].map(({ label, value, tint, text, icon }) => (
             <div key={label} className={`rounded-lg p-5 ${tint} flex items-center gap-4 border border-stone/50`}>

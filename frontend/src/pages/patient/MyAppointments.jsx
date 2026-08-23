@@ -46,7 +46,7 @@ export default function MyAppointments() {
               className={`px-4 py-2 rounded-full font-mono text-[11px] font-semibold capitalize transition-all duration-150 ${
                 filter === f
                   ? 'bg-patient text-white shadow-soft'
-                  : 'bg-white border border-stone text-ink-soft hover:border-patient hover:text-patient'
+                  : 'bg-white border border-stone text-ink-soft hover:border-patient-dark hover:text-patient-dark'
               }`}
             >
               {f}

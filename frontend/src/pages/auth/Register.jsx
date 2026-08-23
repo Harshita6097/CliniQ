@@ -70,7 +70,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-patient-dark via-patient to-patient-light chart-paper-dark">
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-patient-dark">
         <PulseThread color="#ffffff" opacity={0.3} />
         <div className="relative">
           <div className="flex items-center gap-3 mb-2">
@@ -78,8 +78,8 @@ export default function Register() {
               <Logomark className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-white font-display font-semibold text-lg leading-tight">Continuum</p>
-              <p className="text-patient-tint text-xs">Healthcare Appointment Manager</p>
+              <p className="text-white font-display font-semibold text-lg leading-tight">CliniQ</p>
+              <p className="text-white/70 text-xs">Healthcare Appointment Manager</p>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function Register() {
           <h2 className="font-display text-4xl font-semibold text-white leading-tight mb-4">
             Join thousands<br />of patients.
           </h2>
-          <p className="text-patient-tint text-sm mb-10 leading-relaxed">
+          <p className="text-white/80 text-sm mb-10 leading-relaxed">
             Create your free account and start managing your health appointments with ease.
           </p>
           <ul className="space-y-4">
@@ -103,25 +103,25 @@ export default function Register() {
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-patient-tint text-sm font-medium">{label}</span>
+                <span className="text-white/80 text-sm font-medium">{label}</span>
               </li>
             ))}
           </ul>
         </div>
-        <p className="relative text-patient-tint/60 text-xs">© 2025 Continuum. All rights reserved.</p>
+        <p className="relative text-white/50 text-xs">© 2026 CliniQ. All rights reserved.</p>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center bg-paper px-6 py-12">
+      <div className="flex-1 flex items-center justify-center bg-paper-dim px-6 py-12">
         <div className="w-full max-w-md animate-fadeIn">
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <div className="w-8 h-8 rounded-md bg-patient flex items-center justify-center text-white">
               <Logomark className="w-4 h-4" />
             </div>
-            <span className="font-display font-semibold text-ink">Continuum</span>
+            <span className="font-display font-semibold text-ink">CliniQ</span>
           </div>
 
-          <div className="bg-white rounded-lg border border-stone shadow-soft p-8">
+          <div className="bg-white rounded-lg border-2 border-stone shadow-soft p-8">
             <div className="mb-7">
               <h1 className="font-display text-2xl font-semibold text-ink">Create your account</h1>
               <p className="text-sm text-ink-soft mt-1">Patient registration — free &amp; takes 30 seconds</p>
@@ -138,20 +138,20 @@ export default function Register() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1.5">Full name</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5">Full name</label>
                 <input type="text" name="name" value={form.name} onChange={handleChange} required placeholder="Jane Doe" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1.5">Email address</label>
+                <label className="block text-xs font-semibold text-ink mb-1.5">Email address</label>
                 <input type="email" name="email" value={form.email} onChange={handleChange} required autoComplete="email" placeholder="you@example.com" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1.5">Phone <span className="font-normal text-stone-dark">(optional)</span></label>
+                <label className="block text-xs font-semibold text-ink mb-1.5">Phone <span className="font-normal text-ink-soft">(optional)</span></label>
                 <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" className={inputCls} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-ink-soft mb-1.5">Password</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5">Password</label>
                   <div className="relative">
                     <input type={showPwd ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} required autoComplete="new-password" placeholder="Min. 6 chars" className={`${inputCls} pr-14`} />
                     <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs font-medium select-none">{showPwd ? 'Hide' : 'Show'}</button>
@@ -159,7 +159,7 @@ export default function Register() {
                   <StrengthMeter password={form.password} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-ink-soft mb-1.5">Confirm</label>
+                  <label className="block text-xs font-semibold text-ink mb-1.5">Confirm</label>
                   <div className="relative">
                     <input type={showConf ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required autoComplete="new-password" placeholder="••••••••" className={`${inputCls} pr-14`} />
                     <button type="button" onClick={() => setShowConf(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink text-xs font-medium select-none">{showConf ? 'Hide' : 'Show'}</button>
@@ -177,16 +177,16 @@ export default function Register() {
             <div className="mt-6 pt-6 border-t border-stone text-center">
               <p className="text-sm text-ink-soft">
                 Already have an account?{' '}
-                <Link to="/login" className="text-patient hover:text-patient-dark font-semibold hover:underline">Sign in</Link>
+                <Link to="/login" className="text-patient-dark hover:text-patient font-semibold hover:underline">Sign in</Link>
               </p>
             </div>
           </div>
 
-          <div className="mt-4 flex items-start gap-2 bg-patient-tint border border-patient/20 rounded-md px-4 py-3">
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-patient shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <div className="mt-4 flex items-start gap-2 bg-patient-dark border border-patient rounded-md px-4 py-3">
+            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white/80 shrink-0 mt-0.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><path d="M12 16v-4m0-4h.01" />
             </svg>
-            <p className="text-xs text-patient-dark">Doctors are added by admin — contact your administrator for access.</p>
+            <p className="text-xs text-white/90">Doctors are added by admin — contact your administrator for access.</p>
           </div>
         </div>
       </div>

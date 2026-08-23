@@ -51,12 +51,12 @@ export default function PatientDashboard() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
-      <div className="relative rounded-lg bg-gradient-to-r from-patient-dark via-patient to-patient-light p-8 overflow-hidden shadow-pop chart-paper">
+      <div className="relative rounded-lg bg-patient-dark p-8 overflow-hidden shadow-pop">
         <PulseThread color="#ffffff" opacity={0.25} />
         <div className="relative">
-          <p className="text-patient-tint text-sm font-medium mb-1">{greeting}</p>
+          <p className="text-white/70 text-sm font-medium mb-1">{greeting}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-2">{user.name}</h1>
-          <p className="text-patient-tint text-sm mb-6">Your health is our priority. How can we help you today?</p>
+          <p className="text-white/80 text-sm mb-6">Your health is our priority. How can we help you today?</p>
           {nextAppt && (
             <div className="mb-5 inline-flex items-center gap-2 bg-white/15 border border-white/30 rounded-md px-4 py-2 text-white text-sm">
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -81,7 +81,7 @@ export default function PatientDashboard() {
       {isLoading ? <SkeletonLoader variant="stat" count={3} /> : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard label="Upcoming"  value={upcoming.length}      icon={<PulseIcon />}         tint="bg-patient-tint"  textColor="text-patient-dark" />
-          <StatCard label="Completed" value={completed.length}     icon={<ClipboardCheckIcon />} tint="bg-sage-tint"     textColor="text-sage" />
+          <StatCard label="Completed" value={completed.length}     icon={<ClipboardCheckIcon />} tint="bg-sage-tint"     textColor="text-[#3a5c38]" />
           <StatCard label="Total"     value={appointments.length}  icon={<CalendarIcon />}       tint="bg-paper-dim"     textColor="text-ink-soft" />
         </div>
       )}
@@ -93,7 +93,7 @@ export default function PatientDashboard() {
             <h2 className="font-display text-base font-semibold text-ink">Upcoming Appointments</h2>
             <p className="text-xs text-ink-soft mt-0.5">Your next scheduled visits</p>
           </div>
-          <Link to="/patient/appointments" className="text-xs font-semibold text-patient hover:text-patient-dark hover:underline">View all →</Link>
+          <Link to="/patient/appointments" className="text-xs font-semibold text-patient-dark hover:underline">View all →</Link>
         </div>
 
         {isLoading ? (
@@ -105,7 +105,7 @@ export default function PatientDashboard() {
             </svg>
             <p className="text-sm font-semibold text-ink-soft">No upcoming appointments</p>
             <p className="text-xs text-stone-dark mt-1">Book one to get started</p>
-            <Link to="/patient/book" className="inline-block mt-4 text-sm font-semibold text-patient hover:underline">Book now →</Link>
+            <Link to="/patient/book" className="inline-block mt-4 text-sm font-semibold text-patient-dark hover:underline">Book now →</Link>
           </div>
         ) : (
           <ul className="divide-y divide-stone/50">

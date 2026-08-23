@@ -46,8 +46,8 @@ export default function PatientLayout() {
             <Logomark />
           </div>
           <div>
-            <p className="text-sm font-display font-semibold text-white leading-tight">Continuum</p>
-            <p className="text-xs text-patient-tint font-medium">Patient Portal</p>
+            <p className="text-sm font-display font-semibold text-white leading-tight">CliniQ</p>
+            <p className="text-xs text-white/60 font-medium">Patient Portal</p>
           </div>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function PatientLayout() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-            <p className="text-xs text-patient-tint flex items-center gap-1">
+            <p className="text-xs text-white/60 flex items-center gap-1">
               Change password
               <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
             </p>
@@ -78,7 +78,7 @@ export default function PatientLayout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               `relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-150 overflow-hidden ${
-                isActive ? 'bg-white/15 text-white' : 'text-patient-tint hover:bg-white/10 hover:text-white'
+                isActive ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
               }`
             }
           >
@@ -96,7 +96,7 @@ export default function PatientLayout() {
       <div className="px-3 py-4 mt-4 border-t border-white/10">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full rounded-md px-3 py-2.5 text-sm font-medium text-patient-tint hover:bg-white/10 hover:text-danger-tint transition-all duration-150"
+          className="flex items-center gap-3 w-full rounded-md px-3 py-2.5 text-sm font-medium text-white/60 hover:bg-white/10 hover:text-danger-tint transition-all duration-150"
         >
           <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -138,7 +138,7 @@ export default function PatientLayout() {
           </button>
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-patient"><path d="M2 12h4l2-7 4 14 3-9 2 2h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            <span className="font-display font-semibold text-ink text-sm">Continuum</span>
+            <span className="font-display font-semibold text-ink text-sm">CliniQ</span>
           </div>
           <div className="w-8 h-8 rounded-full bg-patient flex items-center justify-center text-white text-xs font-bold">{initials}</div>
         </header>

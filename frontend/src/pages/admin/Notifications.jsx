@@ -13,8 +13,8 @@ const TABS = [
 ];
 
 const TYPE_LABELS = { confirmation: 'Confirmation', reminder: 'Reminder', cancellation: 'Cancellation', medication_reminder: 'Medication' };
-const TYPE_STYLE  = { confirmation: 'bg-patient-tint text-patient-dark', reminder: 'bg-doctor-tint text-doctor-dark', cancellation: 'bg-danger-tint text-danger', medication_reminder: 'bg-admin-tint text-admin-dark' };
-const STATUS_STYLE = { sent: 'bg-ok-tint text-ok', failed: 'bg-danger-tint text-danger', queued: 'bg-warn-tint text-warn' };
+const TYPE_STYLE  = { confirmation: 'bg-patient-tint text-patient-dark', reminder: 'bg-doctor-tint text-doctor-dark', cancellation: 'bg-danger-tint text-[#7a2e29]', medication_reminder: 'bg-admin-tint text-admin-dark' };
+const STATUS_STYLE = { sent: 'bg-ok-tint text-[#3a5c38]', failed: 'bg-danger-tint text-[#7a2e29]', queued: 'bg-warn-tint text-doctor-dark' };
 
 export default function Notifications() {
   const [activeTab, setActiveTab]       = useState('');
@@ -97,7 +97,7 @@ export default function Notifications() {
           <div key={label} className={`rounded-lg p-5 ${tint} flex items-center gap-4 border border-stone/50`}>
             <div>
               <p className={`font-mono text-2xl font-bold ${text}`}>{value}</p>
-              <p className={`text-xs font-semibold ${text} opacity-80`}>{label}</p>
+              <p className={`text-xs font-semibold ${text} opacity-90`}>{label}</p>
             </div>
           </div>
         ))}

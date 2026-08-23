@@ -5,9 +5,9 @@ export default function AICard({ type = 'pre', summary, portal = 'patient' }) {
   const label = isPost ? 'AI POST-VISIT SUMMARY' : 'AI PRE-VISIT SUMMARY';
 
   const URGENCY_STYLE = {
-    High:   'bg-danger-tint text-danger border-danger/30',
-    Medium: 'bg-warn-tint text-warn border-warn/30',
-    Low:    'bg-ok-tint text-ok border-ok/30',
+    High:   'bg-danger-tint text-[#7a2e29] border-danger/30',
+    Medium: 'bg-warn-tint text-doctor-dark border-warn/30',
+    Low:    'bg-ok-tint text-[#3a5c38] border-ok/30',
   };
 
   return (
@@ -15,7 +15,7 @@ export default function AICard({ type = 'pre', summary, portal = 'patient' }) {
       <div className="flex items-center justify-between mb-4">
         <span className="font-mono text-[10px] font-bold text-ink-soft uppercase tracking-widest">{label}</span>
         {summary.isFallback && (
-          <span className="font-mono text-[10px] bg-warn-tint text-warn border border-warn/30 px-2 py-0.5 rounded-full">
+          <span className="font-mono text-[10px] bg-warn-tint text-doctor-dark border border-warn/30 px-2 py-0.5 rounded-full">
             AI unavailable — showing standard template
           </span>
         )}

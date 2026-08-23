@@ -50,9 +50,9 @@ export default function AppointmentCard({ appt, viewHref, onCancel, portal = 'pa
           <Link
             to={viewHref}
             className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
-              portal === 'patient' ? 'text-patient bg-patient-tint hover:bg-patient-tint2'
-              : portal === 'doctor' ? 'text-doctor bg-doctor-tint hover:bg-doctor-tint2'
-              : 'text-admin bg-admin-tint hover:bg-admin-tint2'
+              portal === 'patient' ? 'text-patient-dark bg-patient-tint hover:bg-patient-tint2'
+              : portal === 'doctor' ? 'text-doctor-dark bg-doctor-tint hover:bg-doctor-tint2'
+              : 'text-admin-dark bg-admin-tint hover:bg-admin-tint2'
             }`}
           >
             View

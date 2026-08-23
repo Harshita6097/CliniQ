@@ -256,8 +256,8 @@ function StepSymptomForm({ appointment, onBack }) {
           <span className="text-xs font-semibold text-ink-soft">Slot: <span className="font-mono">{formatSlot(appointment.slotStart)}</span></span>
         </div>
         <div className="flex items-center gap-2 bg-warn-tint border border-warn/30 rounded-md px-4 py-2">
-          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-warn" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-          <span className="text-xs font-semibold text-warn">Hold expires in: <HoldCountdown holdExpiresAt={appointment.holdExpiresAt} /></span>
+          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-doctor-dark" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+          <span className="text-xs font-semibold text-doctor-dark">Hold expires in: <HoldCountdown holdExpiresAt={appointment.holdExpiresAt} /></span>
         </div>
       </div>
 

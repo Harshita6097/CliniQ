@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { SkeletonLoader } from '../../components/common/index.jsx';
 
 export default function LeaveManager() {
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const today = new Date().toISOString().slice(0, 10);
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState('');
   const [pendingDates, setPending]      = useState([]);
@@ -49,13 +49,16 @@ export default function LeaveManager() {
   const leaveDays = [...(profile?.leaveDays ?? [])].sort();
 
   return (
-    <div className="max-w-xl space-y-6 animate-fadeIn">
+    <div className="max-w-5xl space-y-6 animate-fadeIn">
       <div>
         <h1 className="font-display text-2xl font-semibold text-ink">Leave Manager</h1>
         <p className="text-sm text-ink-soft mt-1">Mark days off — confirmed appointments on those days will be cancelled and patients notified.</p>
       </div>
 
-      {/* Add leave */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+      {/* Left column — Add leave */}
+      <div className="space-y-6">
       <div className="bg-white rounded-lg border border-stone shadow-soft p-6 space-y-5">
         <div className="flex items-center gap-2 pb-4 border-b border-stone">
           <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-doctor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
@@ -81,7 +84,7 @@ export default function LeaveManager() {
               {pendingDates.map(d => (
                 <span key={d} className="flex items-center gap-1.5 bg-doctor-tint border border-doctor/20 text-doctor-dark font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full">
                   {format(parseISO(d), 'dd MMM yyyy')}
-                  <button onClick={() => setPending(p => p.filter(x => x !== d))} className="text-doctor/60 hover:text-doctor font-bold leading-none ml-0.5">×</button>
+                  <button onClick={() => setPending(p => p.filter(x => x !== d))} className="text-doctor-dark/70 hover:text-doctor-dark font-bold leading-none ml-0.5">×</button>
                 </span>
               ))}
             </div>
@@ -102,21 +105,22 @@ export default function LeaveManager() {
         <div className="bg-danger-tint border border-danger/30 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-danger" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-            <p className="text-sm font-bold text-danger">Appointments cancelled due to leave</p>
+            <p className="text-sm font-bold text-[#7a2e29]">Appointments cancelled due to leave</p>
           </div>
           <ul className="space-y-1.5 mb-4">
             {conflictInfo.map(a => (
-              <li key={a.id} className="flex items-center gap-2 text-xs text-danger/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+              <li key={a.id} className="flex items-center gap-2 text-xs text-[#7a2e29]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7a2e29] shrink-0" />
                 {a.patientName} — <span className="font-mono">{format(parseISO(a.slotStart.substring(0, 10)), 'dd MMM yyyy')}</span>
               </li>
             ))}
           </ul>
-          <button onClick={() => setConflictInfo(null)} className="text-xs font-semibold text-danger hover:underline">Dismiss</button>
+          <button onClick={() => setConflictInfo(null)} className="text-xs font-semibold text-[#7a2e29] hover:underline">Dismiss</button>
         </div>
       )}
+      </div>{/* end left column */}
 
-      {/* Scheduled leave days */}
+      {/* Right column — Scheduled leave days */}
       <div className="bg-white rounded-lg border border-stone shadow-soft p-6">
         <div className="flex items-center gap-2 pb-4 border-b border-stone mb-4">
           <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-doctor" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
@@ -143,7 +147,7 @@ export default function LeaveManager() {
                 </div>
                 <button
                   onClick={() => deleteLeave([d])} disabled={removing}
-                  className="text-xs font-semibold text-danger bg-danger-tint hover:bg-danger/20 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+                  className="text-xs font-semibold text-[#7a2e29] bg-danger-tint hover:bg-danger/20 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
                 >
                   Remove
                 </button>
@@ -151,7 +155,9 @@ export default function LeaveManager() {
             ))}
           </ul>
         )}
-      </div>
+      </div>{/* end right column */}
+
+      </div>{/* end grid */}
     </div>
   );
 }

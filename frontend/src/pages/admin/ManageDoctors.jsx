@@ -175,7 +175,7 @@ export default function ManageDoctors() {
               {leavePending.map(d => (
                 <span key={d} className="flex items-center gap-1.5 bg-admin-tint border border-admin/20 text-admin-dark font-mono text-[11px] font-semibold px-3 py-1.5 rounded-full">
                   {format(parseISO(d), 'dd MMM yyyy')}
-                  <button onClick={() => setLeavePending(p => p.filter(x => x !== d))} className="text-admin/60 hover:text-admin font-bold">×</button>
+                  <button onClick={() => setLeavePending(p => p.filter(x => x !== d))} className="text-admin-dark/70 hover:text-admin-dark font-bold">×</button>
                 </span>
               ))}
             </div>

@@ -35,7 +35,7 @@ export default function DoctorAppointments() {
         <div className="flex gap-2 flex-wrap">
           {FILTERS.map(f => (
             <button key={f} onClick={() => { setFilter(f); setPage(1); }}
-              className={`px-4 py-2 rounded-full font-mono text-[11px] font-semibold capitalize transition-all ${filter === f ? 'bg-doctor text-white shadow-soft' : 'bg-white border border-stone text-ink-soft hover:border-doctor hover:text-doctor'}`}
+              className={`px-4 py-2 rounded-full font-mono text-[11px] font-semibold capitalize transition-all ${filter === f ? 'bg-doctor text-white shadow-soft' : 'bg-white border border-stone text-ink-soft hover:border-doctor-dark hover:text-doctor-dark'}`}
             >{f}</button>
           ))}
         </div>
