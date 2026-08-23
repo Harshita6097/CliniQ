@@ -68,6 +68,7 @@ export default function DoctorAppointmentDetail() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!notes.trim()) { toast.error("Post-visit notes are required."); return; }
+    if (notes.trim().length < 20) { toast.error("Notes must be at least 20 characters."); return; }
     submit();
   };
 
@@ -128,7 +129,7 @@ export default function DoctorAppointmentDetail() {
       {/* Pre-visit AI summary */}
       {appt.preVisitSummary && (
         <Card title="Pre-visit AI Summary" icon="🤖" fallback={appt.preVisitSummary.isFallback}>
-          {appt.preVisitSummary.urgency && (
+          {appt.preVisitSummary.urgency && urgencyColors[appt.preVisitSummary.urgency] && (
             <div className="mb-3">
               <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${urgencyColors[appt.preVisitSummary.urgency] ?? "bg-gray-100 text-gray-600"}`}>
                 ⚡ Urgency: {appt.preVisitSummary.urgency}
@@ -141,7 +142,7 @@ export default function DoctorAppointmentDetail() {
           </p>
           {appt.preVisitSummary.suggestedQuestions?.length > 0 && (
             <div className="bg-indigo-50 rounded-xl p-4">
-              <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-2">💬 Suggested questions</p>
+              <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-2">💬 Suggested questions to ask the patient</p>
               <ul className="space-y-1.5">
                 {appt.preVisitSummary.suggestedQuestions.map((q, i) => (
                   <li key={i} className="flex gap-2 text-sm text-indigo-800">
@@ -196,7 +197,7 @@ export default function DoctorAppointmentDetail() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Clinical Notes *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Clinical Notes * <span className="text-xs font-normal text-gray-400">(English, min 20 characters)</span></label>
             <div className="relative">
               <textarea
                 value={notes}
@@ -207,7 +208,10 @@ export default function DoctorAppointmentDetail() {
                 placeholder="Diagnosis, observations, follow-up instructions…"
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none bg-gray-50 focus:bg-white transition-colors"
               />
-              <span className={`absolute bottom-3 right-4 text-xs ${notes.length > 4500 ? "text-amber-500 font-semibold" : "text-gray-300"}`}>{notes.length}/5000</span>
+              <span className={`absolute bottom-3 right-4 text-xs ${
+                notes.length > 4500 ? "text-amber-500 font-semibold" :
+                notes.length < 20  ? "text-red-400" : "text-gray-300"
+              }`}>{notes.length}/5000</span>
             </div>
           </div>
 

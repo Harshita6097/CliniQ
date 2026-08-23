@@ -41,6 +41,7 @@ exports.confirmValidation = [
   param("id").isMongoId().withMessage("Valid appointment id is required"),
   body("symptomFormText")
     .trim().notEmpty().withMessage("Symptom description is required")
+    .isLength({ min: 20 }).withMessage("Please describe your symptoms in at least 20 characters.")
     .isLength({ max: 2000 }).withMessage("Symptom description must be under 2000 characters."),
 ];
 
@@ -143,6 +144,23 @@ exports.confirmAppointment = async (req, res, next) => {
     let preVisitSummary = null;
     if (llmService) {
       preVisitSummary = await llmService.generatePreVisitSummary(symptomFormText);
+    } else {
+      preVisitSummary = {
+        urgency: null,
+        chiefComplaint: "AI summary unavailable — raw symptoms shown below.",
+        suggestedQuestions: [
+          "Can you describe when the symptoms started?",
+          "Have you experienced this before?",
+          "Are you currently taking any medication?",
+        ],
+        documentsToCarry: [
+          "List of current medications and supplements",
+          "Any recent lab reports or test results",
+          "Government ID and health insurance card",
+        ],
+        generatedAt: new Date(),
+        isFallback: true,
+      };
     }
 
     const appointment = await confirmSlot(appointmentId, patientId, symptomFormText, preVisitSummary);

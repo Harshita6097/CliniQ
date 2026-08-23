@@ -110,7 +110,7 @@ function StepPickDoctor({ onSelect }) {
 
 // ─── Step 2 ───────────────────────────────────────────────────────────────────
 function StepPickSlot({ doctor, onHeld, onBack }) {
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = new Date().toISOString().slice(0, 10); // UTC date, matches slot generator
   const [date, setDate]       = useState(today);
   const [loading, setLoading] = useState(false);
   const { data: slots = [], isLoading, isFetching } = useSlots(doctor.userId?._id, date);
@@ -223,7 +223,7 @@ function StepSymptomForm({ appointment, onBack }) {
       </button>
 
       <h2 className="text-lg font-bold text-gray-800 mb-1">Describe your symptoms</h2>
-      <p className="text-sm text-gray-400 mb-4">This helps your doctor prepare for your visit</p>
+      <p className="text-sm text-gray-400 mb-4">This helps your doctor prepare for your visit. Please write in English for best AI results.</p>
 
       <div className="flex flex-wrap gap-3 mb-5">
         <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-4 py-2">
@@ -251,7 +251,10 @@ function StepSymptomForm({ appointment, onBack }) {
             placeholder="Describe your symptoms, how long you've had them, any medications you're taking, and relevant medical history…"
             className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none bg-gray-50 focus:bg-white transition-colors leading-relaxed"
           />
-          <span className={`absolute bottom-3 right-4 text-xs ${text.length > 1800 ? "text-amber-500 font-semibold" : "text-gray-300"}`}>{text.length}/2000</span>
+          <span className={`absolute bottom-3 right-4 text-xs ${
+            text.length > 1800 ? "text-amber-500 font-semibold" :
+            text.length < 20  ? "text-red-400" : "text-gray-300"
+          }`}>{text.length}/2000</span>
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex gap-3">
@@ -263,7 +266,7 @@ function StepSymptomForm({ appointment, onBack }) {
 
         <button
           type="submit"
-          disabled={loading || !text.trim()}
+          disabled={loading || text.trim().length < 20}
           className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 disabled:opacity-60 text-white font-semibold text-sm py-3 transition-all duration-150 shadow-md shadow-teal-200 hover:shadow-lg hover:-translate-y-0.5"
         >
           {loading ? "Confirming…" : "Confirm Appointment ✓"}

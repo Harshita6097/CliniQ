@@ -20,6 +20,7 @@ const preVisitSummarySchema = new mongoose.Schema(
     },
     chiefComplaint: { type: String, default: null },
     suggestedQuestions: { type: [String], default: [] },
+    documentsToCarry: { type: [String], default: [] },
     generatedAt: { type: Date, default: null },
     isFallback: { type: Boolean, default: false }, // true when LLM failed and template was used
   },

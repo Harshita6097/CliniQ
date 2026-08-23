@@ -108,7 +108,7 @@ export default function PatientAppointmentDetail() {
       {/* Pre-visit AI summary */}
       {appt.preVisitSummary && (
         <Card title="Pre-visit AI Summary" icon="🤖" fallback={appt.preVisitSummary.isFallback}>
-          {appt.preVisitSummary.urgency && (
+          {appt.preVisitSummary.urgency && urgencyColors[appt.preVisitSummary.urgency] && (
             <div className="mb-3">
               <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${urgencyColors[appt.preVisitSummary.urgency] ?? "bg-gray-100 text-gray-600"}`}>
                 ⚡ Urgency: {appt.preVisitSummary.urgency}
@@ -119,14 +119,14 @@ export default function PatientAppointmentDetail() {
             <span className="font-semibold text-gray-800">Chief complaint: </span>
             {appt.preVisitSummary.chiefComplaint}
           </p>
-          {appt.preVisitSummary.suggestedQuestions?.length > 0 && (
+          {appt.preVisitSummary.documentsToCarry?.length > 0 && (
             <div className="bg-teal-50 rounded-xl p-4">
-              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-2">💬 Questions to ask your doctor</p>
+              <p className="text-xs font-bold text-teal-700 uppercase tracking-wide mb-2">📁 What to bring to your appointment</p>
               <ul className="space-y-1.5">
-                {appt.preVisitSummary.suggestedQuestions.map((q, i) => (
+                {appt.preVisitSummary.documentsToCarry.map((item, i) => (
                   <li key={i} className="flex gap-2 text-sm text-teal-800">
-                    <span className="text-teal-400 font-bold shrink-0">{i + 1}.</span>
-                    {q}
+                    <span className="text-teal-400 font-bold shrink-0">✓</span>
+                    {item}
                   </li>
                 ))}
               </ul>

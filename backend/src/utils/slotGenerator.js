@@ -6,6 +6,7 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 /**
  * Generates all possible time slots for a doctor on a given date.
  * All times are treated as UTC to stay consistent with MongoDB storage.
+ * Slots that have already started are excluded when the date is today.
  *
  * @param {string} date             - "YYYY-MM-DD"
  * @param {Array}  workingHours     - [{ day, start, end }] from DoctorProfile
@@ -30,11 +31,13 @@ const generateSlotsForDate = (date, workingHours, slotDurationMins) => {
   // Guard: if start >= end (misconfigured working hours), return empty
   if (cursor >= dayEnd) return [];
 
+  const now = new Date();
   const slots = [];
   while (true) {
     const slotEnd = addMinutes(cursor, slotDurationMins);
     if (slotEnd > dayEnd) break;
-    slots.push({ slotStart: new Date(cursor), slotEnd });
+    // Skip slots that have already started
+    if (cursor > now) slots.push({ slotStart: new Date(cursor), slotEnd });
     cursor = slotEnd;
   }
 

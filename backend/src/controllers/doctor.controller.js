@@ -23,6 +23,7 @@ exports.notesValidation = [
   param("id").isMongoId().withMessage("Valid appointment id is required"),
   body("postVisitNotes")
     .trim().notEmpty().withMessage("Post-visit notes are required")
+    .isLength({ min: 20 }).withMessage("Post-visit notes must be at least 20 characters.")
     .isLength({ max: 5000 }).withMessage("Post-visit notes must be under 5000 characters."),
   body("prescription").optional().isArray().withMessage("Prescription must be an array"),
   body("prescription.*.medicine").notEmpty().withMessage("Medicine name is required"),
@@ -112,6 +113,23 @@ exports.submitNotes = async (req, res, next) => {
     let postVisitSummary = null;
     if (llmService) {
       postVisitSummary = await llmService.generatePostVisitSummary(postVisitNotes, prescription);
+    } else {
+      const prescriptionText = prescription.length > 0
+        ? prescription.map(p => `${p.medicine} ${p.dosage} — ${p.frequency} for ${p.durationDays} day(s)${p.notes ? ` (${p.notes})` : ""}`).join("\n")
+        : "No medication prescribed.";
+      postVisitSummary = {
+        patientFriendlySummary: [
+          "AI summary is currently unavailable. Here are your visit details:",
+          "",
+          `Doctor's notes: ${postVisitNotes}`,
+          "",
+          prescription.length > 0 ? `Prescription:\n${prescriptionText}` : "No medication was prescribed.",
+          "",
+          "Please contact your doctor if you have any questions.",
+        ].join("\n"),
+        generatedAt: new Date(),
+        isFallback: true,
+      };
     }
 
     // Transition confirmed → completed
