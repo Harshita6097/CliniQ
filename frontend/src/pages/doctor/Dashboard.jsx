@@ -40,7 +40,7 @@ export default function DoctorDashboard() {
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
       <div className="relative rounded-lg bg-doctor-dark p-8 overflow-hidden shadow-pop">
-        <PulseThread color="#ffffff" opacity={0.25} />
+        <PulseThread color="#ffffff" opacity={0.25} yOffset={200} />
         <div className="relative">
           <p className="text-white/70 text-sm font-medium mb-1">{greeting}, Dr. {user.name?.split(' ')[0]}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-1">Your Schedule</h1>

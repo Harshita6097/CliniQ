@@ -1,4 +1,6 @@
-export default function PulseThread({ color = '#ffffff', opacity = 0.35, className = '' }) {
+export default function PulseThread({ color = '#ffffff', opacity = 0.35, className = '', yOffset = 220 }) {
+  const y = yOffset;
+  const amp = 40; // amplitude of the pulse spikes
   return (
     <svg
       viewBox="0 0 900 300"
@@ -7,7 +9,7 @@ export default function PulseThread({ color = '#ffffff', opacity = 0.35, classNa
       aria-hidden="true"
     >
       <path
-        d="M0 150 L110 150 L140 90 L175 200 L200 120 L225 150 L280 150 C 400 150, 380 90, 480 110 S 700 70, 900 120"
+        d={`M0 ${y} L110 ${y} L140 ${y - amp * 1.5} L175 ${y + amp} L200 ${y - amp * 0.75} L225 ${y} L280 ${y} C 400 ${y}, 380 ${y - amp} 480 ${y - amp * 0.75} S 700 ${y - amp * 2} 900 ${y - amp}`}
         stroke={color}
         strokeWidth="2.5"
         fill="none"

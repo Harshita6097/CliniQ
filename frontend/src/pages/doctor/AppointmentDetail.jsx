@@ -130,8 +130,8 @@ export default function DoctorAppointmentDetail() {
 
       {/* Sticky submit bar */}
       {isConfirmed && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-30 md:left-64">
-          <div className="bg-white rounded-lg border border-stone shadow-pop px-5 py-3 flex items-center gap-4 max-w-sm w-full">
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 z-30 pointer-events-none">
+          <div className="bg-white rounded-lg border border-stone shadow-pop px-5 py-3 flex items-center gap-4 max-w-sm w-full pointer-events-auto">
             <p className="text-xs text-ink-soft flex-1">Ready to complete this visit?</p>
             <button
               onClick={handleSubmit}

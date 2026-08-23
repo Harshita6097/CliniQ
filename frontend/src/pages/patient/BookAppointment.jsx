@@ -64,9 +64,69 @@ function MiniCalendar({ selected, onSelect, minDate }) {
   );
 }
 
+// ─── Doctor Profile Modal ────────────────────────────────────────────────────
+function DoctorProfileModal({ doctor, onConfirm, onClose }) {
+  if (!doctor) return null;
+  const d = doctor;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-pop w-full max-w-sm p-6 animate-fadeIn">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-paper-dim text-ink-soft transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-14 h-14 rounded-xl bg-patient-tint flex items-center justify-center text-patient-dark font-display font-bold text-2xl shrink-0">
+            {d.userId?.name?.[0] ?? 'D'}
+          </div>
+          <div>
+            <p className="font-display text-base font-semibold text-ink">{d.userId?.name}</p>
+            <p className="font-mono text-xs text-patient mt-0.5">{d.specialization}</p>
+          </div>
+        </div>
+        <div className="space-y-3 mb-5">
+          {d.qualifications && (
+            <div>
+              <p className="font-mono text-[10px] font-bold text-ink-soft uppercase tracking-widest mb-1">Qualifications</p>
+              <p className="text-sm text-ink">{d.qualifications}</p>
+            </div>
+          )}
+          {d.bio && (
+            <div>
+              <p className="font-mono text-[10px] font-bold text-ink-soft uppercase tracking-widest mb-1">About</p>
+              <p className="text-sm text-ink leading-relaxed">{d.bio}</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            {d.slotDurationMins && (
+              <div className="flex-1 bg-paper-dim rounded-md px-3 py-2.5">
+                <p className="font-mono text-[10px] text-ink-soft uppercase">Slot</p>
+                <p className="font-mono text-sm font-bold text-ink">{d.slotDurationMins} min</p>
+              </div>
+            )}
+            {d.consultationFee > 0 && (
+              <div className="flex-1 bg-ok-tint rounded-md px-3 py-2.5">
+                <p className="font-mono text-[10px] text-ink-soft uppercase">Fee</p>
+                <p className="font-mono text-sm font-bold text-ok">₹{d.consultationFee}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={onConfirm}
+          className="w-full rounded-xl bg-patient hover:bg-patient-dark text-white font-bold text-sm py-3 transition-all duration-150 hover:shadow-pop hover:-translate-y-0.5"
+        >
+          Book with {d.userId?.name?.split(' ')[0]} →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Step 1 ───────────────────────────────────────────────────────────────────
 function StepPickDoctor({ onSelect }) {
   const [search, setSearch] = useState('');
+  const [preview, setPreview] = useState(null);
   const { data: doctors = [], isLoading } = useQuery({
     queryKey: ['doctors', search],
     queryFn: () => getDoctors(search),
@@ -98,7 +158,7 @@ function StepPickDoctor({ onSelect }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {doctors.map(d => (
             <button
-              key={d._id} onClick={() => onSelect(d)}
+              key={d._id} onClick={() => setPreview(d)}
               className="flex items-center gap-4 bg-white border border-stone rounded-lg px-5 py-4 text-left hover:border-patient hover:shadow-pop hover:-translate-y-0.5 transition-all duration-200"
             >
               <div className="w-12 h-12 rounded-md bg-patient-tint flex items-center justify-center text-patient-dark font-display font-bold text-lg shrink-0">
@@ -119,6 +179,11 @@ function StepPickDoctor({ onSelect }) {
           ))}
         </div>
       )}
+      <DoctorProfileModal
+        doctor={preview}
+        onClose={() => setPreview(null)}
+        onConfirm={() => { onSelect(preview); setPreview(null); }}
+      />
     </div>
   );
 }
@@ -309,7 +374,7 @@ export default function BookAppointment() {
         <h1 className="font-display text-2xl font-semibold text-ink">Book an Appointment</h1>
         <p className="text-sm text-ink-soft mt-1">Follow the steps below to schedule your visit</p>
       </div>
-      <div className="bg-white rounded-lg border border-stone shadow-soft p-8">
+      <div className="bg-white rounded-lg border border-stone shadow-soft p-5 sm:p-8">
         <StepIndicator steps={STEPS} currentStep={step} portal="patient" />
         {step === 1 && <StepPickDoctor onSelect={d => { setDoctor(d); setStep(2); }} />}
         {step === 2 && selectedDoctor && (

@@ -72,14 +72,14 @@ export default function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-paper">
       <aside className="hidden md:flex w-64 bg-gradient-to-b from-admin-dark to-admin flex-col shadow-pop relative overflow-hidden shrink-0">
-        <PulseThread color="#ffffff" opacity={0.2} />
+        <PulseThread color="#ffffff" opacity={0.2} yOffset={230} />
         <div className="relative flex flex-col h-full"><SidebarContent /></div>
       </aside>
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-64 bg-gradient-to-b from-admin-dark to-admin flex flex-col shadow-pop overflow-hidden">
-            <PulseThread color="#ffffff" opacity={0.2} />
+            <PulseThread color="#ffffff" opacity={0.2} yOffset={230} />
             <div className="relative flex flex-col h-full"><SidebarContent /></div>
           </aside>
         </div>

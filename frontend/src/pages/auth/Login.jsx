@@ -12,9 +12,9 @@ const Logomark = ({ className = 'w-6 h-6' }) => (
 );
 
 const features = [
-  { label: 'Pre-visit AI summaries', sub: 'Gemini analyses your symptoms before the appointment' },
-  { label: 'Google Calendar sync', sub: 'Appointments appear automatically in your calendar' },
-  { label: '5-minute slot holds', sub: 'Your slot is reserved while you fill in your details' },
+  { label: 'AI-powered pre-visit summaries', sub: 'Gemini analyses your symptoms and prepares your doctor before the visit' },
+  { label: 'Google Calendar sync', sub: 'Confirmed appointments are added to your calendar automatically' },
+  { label: '15-minute slot holds', sub: 'Your slot is reserved while you describe your symptoms' },
 ];
 
 export default function Login() {
@@ -47,7 +47,7 @@ export default function Login() {
     <div className="min-h-screen flex">
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 overflow-hidden bg-patient-dark">
-        <PulseThread color="#ffffff" opacity={0.3} />
+        <PulseThread color="#ffffff" opacity={0.3} yOffset={80} />
         <div className="relative">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-md bg-white/20 flex items-center justify-center text-white">

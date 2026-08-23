@@ -111,7 +111,7 @@ export default function PatientLayout() {
     <div className="flex min-h-screen bg-paper">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 bg-gradient-to-b from-patient-dark to-patient flex-col shadow-pop relative overflow-hidden shrink-0">
-        <PulseThread color="#ffffff" opacity={0.2} />
+        <PulseThread color="#ffffff" opacity={0.2} yOffset={230} />
         <div className="relative flex flex-col h-full">
           <SidebarContent />
         </div>
@@ -122,7 +122,7 @@ export default function PatientLayout() {
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-64 bg-gradient-to-b from-patient-dark to-patient flex flex-col shadow-pop overflow-hidden">
-            <PulseThread color="#ffffff" opacity={0.2} />
+            <PulseThread color="#ffffff" opacity={0.2} yOffset={230} />
             <div className="relative flex flex-col h-full">
               <SidebarContent />
             </div>
@@ -142,16 +142,6 @@ export default function PatientLayout() {
           </div>
           <div className="w-8 h-8 rounded-full bg-patient flex items-center justify-center text-white text-xs font-bold">{initials}</div>
         </header>
-
-        {/* Notification bell — decorative */}
-        <div className="hidden md:flex justify-end px-8 pt-4">
-          <button className="relative p-2 rounded-md hover:bg-paper-dim transition-colors" aria-label="Notifications">
-            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-ink-soft" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-            </svg>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-patient" />
-          </button>
-        </div>
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           <Outlet />

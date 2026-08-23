@@ -20,7 +20,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <App />
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3500,
+            style: { fontFamily: 'inherit', fontSize: '0.875rem', maxWidth: '380px' },
+            success: { iconTheme: { primary: '#5a8a57', secondary: '#fff' } },
+            error:   { iconTheme: { primary: '#b94040', secondary: '#fff' } },
+          }}
+        />
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>

@@ -52,7 +52,7 @@ export default function PatientDashboard() {
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
       <div className="relative rounded-lg bg-patient-dark p-8 overflow-hidden shadow-pop">
-        <PulseThread color="#ffffff" opacity={0.25} />
+        <PulseThread color="#ffffff" opacity={0.25} yOffset={240} />
         <div className="relative">
           <p className="text-white/70 text-sm font-medium mb-1">{greeting}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-2">{user.name}</h1>
@@ -76,8 +76,6 @@ export default function PatientDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Stats */}
       {isLoading ? <SkeletonLoader variant="stat" count={3} /> : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard label="Upcoming"  value={upcoming.length}      icon={<PulseIcon />}         tint="bg-patient-tint"  textColor="text-patient-dark" />

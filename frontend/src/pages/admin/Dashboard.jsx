@@ -18,6 +18,15 @@ export default function AdminDashboard() {
   const { data: notifData, isLoading: notifLoading } = useQuery({ queryKey: ['adminNotifs'], queryFn: () => adminGetNotifications() });
   const { data: userData,  isLoading: userLoading  } = useQuery({ queryKey: ['adminUsers'],  queryFn: () => adminGetAllUsers() });
   const { data: apptData,  isLoading: apptLoading  } = useQuery({ queryKey: ['adminAppts', 'recent'], queryFn: () => adminGetAllAppointments({ status: 'confirmed' }) });
+  const { data: monthData } = useQuery({
+    queryKey: ['adminAppts', 'month'],
+    queryFn: () => {
+      const now = new Date();
+      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      return adminGetAllAppointments({ from, to });
+    },
+  });
 
   const { mutate: toggleUser, isPending: toggling } = useMutation({
     mutationFn: adminToggleUser,
@@ -38,7 +47,7 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-fadeIn">
       {/* Hero */}
       <div className="relative rounded-lg bg-admin-dark p-8 overflow-hidden shadow-pop">
-        <PulseThread color="#ffffff" opacity={0.25} />
+        <PulseThread color="#ffffff" opacity={0.25} yOffset={200} />
         <div className="relative">
           <p className="text-white/70 text-sm font-medium mb-1">{greeting}</p>
           <h1 className="font-display text-3xl font-semibold text-white mb-1">{user.name}</h1>
@@ -48,12 +57,14 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       {userLoading || notifLoading ? <SkeletonLoader variant="stat" count={4} /> : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
             { label: 'Patients',      value: patients.length,  tint: 'bg-patient-tint', text: 'text-patient-dark', href: '/admin/appointments',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> },
             { label: 'Doctors',       value: doctors.length,   tint: 'bg-doctor-tint',  text: 'text-doctor-dark',  href: '/admin/doctors',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l2-7 4 14 3-9 2 2h5" /></svg> },
+            { label: 'This Month',    value: monthData?.appointments?.length ?? '—', tint: 'bg-admin-tint',   text: 'text-admin-dark',   href: '/admin/appointments',
+              icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg> },
             { label: 'Emails Queued', value: summary.queued,   tint: 'bg-warn-tint',    text: 'text-doctor-dark',  href: '/admin/notifications',
               icon: <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="M22 6l-10 7L2 6" /></svg> },
             { label: 'Emails Failed', value: summary.failed,   tint: 'bg-danger-tint',  text: 'text-[#7a2e29]',    href: '/admin/notifications',
