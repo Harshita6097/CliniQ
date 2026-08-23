@@ -156,7 +156,7 @@ All variables live in `backend/.env`. Copy from `backend/.env.example`.
 | `GOOGLE_CLIENT_SECRET` | No* | Google OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | No | OAuth callback URL (default `http://localhost:5000/api/calendar/oauth/callback`) |
 | `CLIENT_URL` | No | Frontend URL for CORS + OAuth redirects (default `http://localhost:3000`) |
-| `HOLD_DURATION_MINUTES` | No | Slot hold window in minutes (default `5`) |
+| `HOLD_DURATION_MINUTES` | No | Slot hold window in minutes (default `5`, set to `15` in this project) |
 | `MAX_NOTIFICATION_RETRIES` | No | Max email retry attempts (default `5`) |
 
 *App runs without these — the relevant feature degrades gracefully.
@@ -201,7 +201,7 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 |--------|------|-------------|
 | GET | `/doctors` | List doctors, optional `?specialization=` filter |
 | GET | `/doctors/:doctorId/slots` | Available slots — requires `?date=YYYY-MM-DD` |
-| POST | `/appointments/hold` | Step 1 — hold a slot (5-min window) |
+| POST | `/appointments/hold` | Step 1 — hold a slot (15-min window) |
 | POST | `/appointments/:id/confirm` | Step 2 — submit symptoms, confirm booking |
 | DELETE | `/appointments/:id` | Cancel an appointment |
 | GET | `/appointments` | List own appointments, optional `?status=` filter |
