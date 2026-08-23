@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const logger = require("../utils/logger");
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS) || 10000;
 
 // Lazy-initialise so the module loads safely without GEMINI_API_KEY set at import time.
