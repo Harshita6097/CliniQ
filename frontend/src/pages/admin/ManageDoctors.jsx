@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   adminGetAllDoctors,
   adminCreateDoctor,
+  adminUpdateDoctor,
   adminDeactivateDoctor,
   adminReactivateDoctor,
   adminMarkLeave,
@@ -19,7 +20,6 @@ const emptyForm = () => ({
   workingHours: [{ day: "Monday", start: "09:00", end: "17:00" }],
 });
 
-// Password field with show/hide toggle
 const PasswordField = ({ label, name, value, onChange, required }) => {
   const [show, setShow] = useState(false);
   return (
@@ -42,11 +42,45 @@ const PasswordField = ({ label, name, value, onChange, required }) => {
   );
 };
 
+const WorkingHoursEditor = ({ rows, onAdd, onRemove, onUpdate }) => (
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <label className="text-sm font-semibold text-gray-700">Working Hours *</label>
+      <button type="button" onClick={onAdd}
+        className="text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">
+        + Add row
+      </button>
+    </div>
+    <div className="space-y-2">
+      {rows.map((wh, i) => (
+        <div key={i} className="flex gap-2 items-center bg-purple-50/50 rounded-xl p-2">
+          <select value={wh.day} onChange={(e) => onUpdate(i, "day", e.target.value)}
+            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white">
+            {DAYS.map(d => <option key={d}>{d}</option>)}
+          </select>
+          <input type="time" value={wh.start} onChange={(e) => onUpdate(i, "start", e.target.value)}
+            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white" />
+          <span className="text-gray-400 text-xs font-medium">to</span>
+          <input type="time" value={wh.end} onChange={(e) => onUpdate(i, "end", e.target.value)}
+            className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white" />
+          {rows.length > 1 && (
+            <button type="button" onClick={() => onRemove(i)}
+              className="text-red-400 hover:text-red-600 text-sm font-bold px-1">✕</button>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function ManageDoctors() {
   const queryClient = useQueryClient();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = new Date().toISOString().slice(0, 10);
+
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm]             = useState(emptyForm());
+  const [editModal, setEditModal]   = useState(null);
+  const [editForm, setEditForm]     = useState(null);
   const [leaveModal, setLeaveModal] = useState(null);
   const [leaveDate, setLeaveDate]   = useState("");
 
@@ -63,6 +97,16 @@ export default function ManageDoctors() {
       toast.success("Doctor created.");
     },
     onError: (err) => toast.error(err.response?.data?.message || "Failed to create doctor."),
+  });
+
+  const { mutate: updateDoctor, isPending: updating } = useMutation({
+    mutationFn: ({ id, data }) => adminUpdateDoctor(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminDoctors"] });
+      setEditModal(null); setEditForm(null);
+      toast.success("Doctor profile updated.");
+    },
+    onError: (err) => toast.error(err.response?.data?.message || "Failed to update doctor."),
   });
 
   const { mutate: deactivate } = useMutation({
@@ -87,10 +131,29 @@ export default function ManageDoctors() {
     onError: (err) => toast.error(err.response?.data?.message || "Failed to save leave."),
   });
 
+  // Create form helpers
   const addWH    = () => setForm(f => ({ ...f, workingHours: [...f.workingHours, { day: "Monday", start: "09:00", end: "17:00" }] }));
   const removeWH = (i) => setForm(f => ({ ...f, workingHours: f.workingHours.filter((_, idx) => idx !== i) }));
   const updateWH = (i, field, value) =>
     setForm(f => ({ ...f, workingHours: f.workingHours.map((wh, idx) => idx === i ? { ...wh, [field]: value } : wh) }));
+
+  // Edit form helpers
+  const addEditWH    = () => setEditForm(f => ({ ...f, workingHours: [...f.workingHours, { day: "Monday", start: "09:00", end: "17:00" }] }));
+  const removeEditWH = (i) => setEditForm(f => ({ ...f, workingHours: f.workingHours.filter((_, idx) => idx !== i) }));
+  const updateEditWH = (i, field, value) =>
+    setEditForm(f => ({ ...f, workingHours: f.workingHours.map((wh, idx) => idx === i ? { ...wh, [field]: value } : wh) }));
+
+  const openEdit = (d) => {
+    setEditForm({
+      specialization:   d.specialization,
+      slotDurationMins: d.slotDurationMins,
+      consultationFee:  d.consultationFee,
+      qualifications:   d.qualifications || "",
+      bio:              d.bio || "",
+      workingHours:     d.workingHours?.length ? d.workingHours : [{ day: "Monday", start: "09:00", end: "17:00" }],
+    });
+    setEditModal({ doctorId: d.userId?._id, name: d.userId?.name });
+  };
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -104,12 +167,26 @@ export default function ManageDoctors() {
     });
   };
 
+  const handleEdit = (e) => {
+    e.preventDefault();
+    updateDoctor({
+      id: editModal.doctorId,
+      data: {
+        ...editForm,
+        slotDurationMins: Number(editForm.slotDurationMins),
+        consultationFee:  Number(editForm.consultationFee),
+        qualifications:   editForm.qualifications || undefined,
+        bio:              editForm.bio || undefined,
+      },
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Manage Doctors</h1>
-          <p className="text-sm text-gray-400 mt-1">Add, deactivate, and manage doctor schedules</p>
+          <p className="text-sm text-gray-400 mt-1">Add, edit, deactivate, and manage doctor schedules</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -168,7 +245,13 @@ export default function ManageDoctors() {
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => openEdit(d)}
+                  className="flex-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-2 rounded-xl transition-colors"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => setLeaveModal({ doctorId: d.userId?._id, name: d.userId?.name })}
                   className="flex-1 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-2 rounded-xl transition-colors"
@@ -201,46 +284,17 @@ export default function ManageDoctors() {
         <Modal title="Add New Doctor" onClose={() => { setShowCreate(false); setForm(emptyForm()); }}>
           <form onSubmit={handleCreate} className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Full Name *"           name="name"             value={form.name}             onChange={setForm} required />
-              <Field label="Email *"               name="email"            value={form.email}            onChange={setForm} type="email" required />
-              <PasswordField label="Password *"    name="password"         value={form.password}         onChange={setForm} required />
-              <Field label="Phone"                 name="phone"            value={form.phone}            onChange={setForm} />
-              <Field label="Specialization *"      name="specialization"   value={form.specialization}   onChange={setForm} required />
+              <Field label="Full Name *"            name="name"             value={form.name}             onChange={setForm} required />
+              <Field label="Email *"                name="email"            value={form.email}            onChange={setForm} type="email" required />
+              <PasswordField label="Password *"     name="password"         value={form.password}         onChange={setForm} required />
+              <Field label="Phone"                  name="phone"            value={form.phone}            onChange={setForm} />
+              <Field label="Specialization *"       name="specialization"   value={form.specialization}   onChange={setForm} required />
               <Field label="Slot Duration (mins) *" name="slotDurationMins" value={form.slotDurationMins} onChange={setForm} type="number" required />
-              <Field label="Consultation Fee (₹)"  name="consultationFee"  value={form.consultationFee}  onChange={setForm} type="number" />
-              <Field label="Qualifications"        name="qualifications"   value={form.qualifications}   onChange={setForm} />
+              <Field label="Consultation Fee (₹)"   name="consultationFee"  value={form.consultationFee}  onChange={setForm} type="number" />
+              <Field label="Qualifications"         name="qualifications"   value={form.qualifications}   onChange={setForm} />
             </div>
             <Field label="Bio" name="bio" value={form.bio} onChange={setForm} />
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-gray-700">Working Hours *</label>
-                <button type="button" onClick={addWH}
-                  className="text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">
-                  + Add row
-                </button>
-              </div>
-              <div className="space-y-2">
-                {form.workingHours.map((wh, i) => (
-                  <div key={i} className="flex gap-2 items-center bg-purple-50/50 rounded-xl p-2">
-                    <select value={wh.day} onChange={(e) => updateWH(i, "day", e.target.value)}
-                      className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white">
-                      {DAYS.map(d => <option key={d}>{d}</option>)}
-                    </select>
-                    <input type="time" value={wh.start} onChange={(e) => updateWH(i, "start", e.target.value)}
-                      className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white" />
-                    <span className="text-gray-400 text-xs font-medium">to</span>
-                    <input type="time" value={wh.end} onChange={(e) => updateWH(i, "end", e.target.value)}
-                      className="rounded-lg border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 bg-white" />
-                    {form.workingHours.length > 1 && (
-                      <button type="button" onClick={() => removeWH(i)}
-                        className="text-red-400 hover:text-red-600 text-sm font-bold px-1">✕</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
+            <WorkingHoursEditor rows={form.workingHours} onAdd={addWH} onRemove={removeWH} onUpdate={updateWH} />
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
               <button type="button" onClick={() => { setShowCreate(false); setForm(emptyForm()); }}
                 className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
@@ -249,6 +303,32 @@ export default function ManageDoctors() {
               <button type="submit" disabled={creating}
                 className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 disabled:opacity-60 text-white rounded-xl transition-colors shadow-md">
                 {creating ? "Creating…" : "Create Doctor"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit doctor modal */}
+      {editModal && editForm && (
+        <Modal title={`Edit — Dr. ${editModal.name}`} onClose={() => { setEditModal(null); setEditForm(null); }}>
+          <form onSubmit={handleEdit} className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Specialization *"       name="specialization"   value={editForm.specialization}   onChange={setEditForm} required />
+              <Field label="Slot Duration (mins) *" name="slotDurationMins" value={editForm.slotDurationMins} onChange={setEditForm} type="number" required />
+              <Field label="Consultation Fee (₹)"   name="consultationFee"  value={editForm.consultationFee}  onChange={setEditForm} type="number" />
+              <Field label="Qualifications"         name="qualifications"   value={editForm.qualifications}   onChange={setEditForm} />
+            </div>
+            <Field label="Bio" name="bio" value={editForm.bio} onChange={setEditForm} />
+            <WorkingHoursEditor rows={editForm.workingHours} onAdd={addEditWH} onRemove={removeEditWH} onUpdate={updateEditWH} />
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <button type="button" onClick={() => { setEditModal(null); setEditForm(null); }}
+                className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button type="submit" disabled={updating}
+                className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 disabled:opacity-60 text-white rounded-xl transition-colors shadow-md">
+                {updating ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </form>

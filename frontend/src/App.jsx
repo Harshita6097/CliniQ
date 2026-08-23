@@ -23,6 +23,10 @@ import AdminLayout       from "./pages/admin/AdminLayout";
 import AdminDashboard    from "./pages/admin/Dashboard";
 import ManageDoctors     from "./pages/admin/ManageDoctors";
 import AllAppointments   from "./pages/admin/AllAppointments";
+import Notifications     from "./pages/admin/Notifications";
+
+// Shared pages
+import CalendarSettings  from "./pages/shared/CalendarSettings";
 
 // ─── ProtectedRoute ───────────────────────────────────────────────────────────
 // Redirects to /login if not authenticated.
@@ -58,6 +62,7 @@ export default function App() {
             <Route path="/patient/book"                     element={<BookAppointment />} />
             <Route path="/patient/appointments"             element={<MyAppointments />} />
             <Route path="/patient/appointments/:id"         element={<PatientApptDetail />} />
+            <Route path="/patient/settings"                  element={<CalendarSettings />} />
           </Route>
         </Route>
 
@@ -67,6 +72,7 @@ export default function App() {
             <Route path="/doctor"                           element={<DoctorDashboard />} />
             <Route path="/doctor/appointments/:id"          element={<DoctorApptDetail />} />
             <Route path="/doctor/leave"                     element={<LeaveManager />} />
+            <Route path="/doctor/settings"                   element={<CalendarSettings />} />
           </Route>
         </Route>
 
@@ -76,6 +82,7 @@ export default function App() {
             <Route path="/admin"                            element={<AdminDashboard />} />
             <Route path="/admin/doctors"                    element={<ManageDoctors />} />
             <Route path="/admin/appointments"               element={<AllAppointments />} />
+            <Route path="/admin/notifications"               element={<Notifications />} />
           </Route>
         </Route>
 

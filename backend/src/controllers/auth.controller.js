@@ -102,16 +102,23 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
-// PATCH /api/auth/me  — update own name / phone
+// PATCH /api/auth/me  — update own name / phone / notificationPreferences
 exports.updateMe = async (req, res, next) => {
   try {
-    const { name, phone } = req.body;
-    if (!name && !phone)
-      return res.status(400).json({ message: "Provide at least one field to update: name or phone." });
+    const { name, phone, notificationPreferences } = req.body;
+    if (!name && !phone && !notificationPreferences)
+      return res.status(400).json({ message: "Provide at least one field to update." });
 
     const updates = {};
     if (name)  updates.name  = name;
     if (phone) updates.phone = phone;
+    if (notificationPreferences && typeof notificationPreferences === "object") {
+      const allowed = ["appointmentReminder", "medicationReminder", "calendarUpdates"];
+      allowed.forEach((key) => {
+        if (typeof notificationPreferences[key] === "boolean")
+          updates[`notificationPreferences.${key}`] = notificationPreferences[key];
+      });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,

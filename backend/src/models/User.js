@@ -42,6 +42,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Patient-controlled notification preferences
+    // Confirmation and cancellation emails are always sent (mandatory)
+    notificationPreferences: {
+      appointmentReminder: { type: Boolean, default: true },
+      medicationReminder:  { type: Boolean, default: true },
+      calendarUpdates:     { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );

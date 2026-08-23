@@ -121,6 +121,12 @@ const queueReminderNotification = async (appointment) => {
   ]);
   if (!patient || !doctor) return;
 
+  // Respect patient preference — reminder is optional
+  if (patient.notificationPreferences?.appointmentReminder === false) {
+    logger.info(`Skipping reminder for appointment ${appointment._id} — patient opted out`);
+    return;
+  }
+
   const slotDate = new Date(appointment.slotStart).toLocaleString("en-IN", {
     dateStyle: "full",
     timeStyle: "short",

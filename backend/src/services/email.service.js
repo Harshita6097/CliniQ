@@ -33,7 +33,7 @@ const sendEmail = async ({ to, subject, body }) => {
     subject,
     // body is plain text; wrap in minimal HTML for email clients
     html: `<div style="font-family:sans-serif;max-width:600px;margin:auto">
-      <p>${body.replace(/\n/g, "<br/>")}</p>
+      <p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
       <hr/>
       <small style="color:#888">Healthcare Appointment System — do not reply to this email.</small>
     </div>`,

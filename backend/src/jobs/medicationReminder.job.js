@@ -32,7 +32,7 @@ const runMedicationReminders = async () => {
     "prescription.0": { $exists: true },
     slotStart: { $gte: sixtyDaysAgo },
   })
-    .populate("patientId", "name email")
+    .populate("patientId", "name email notificationPreferences")
     .lean();
 
   if (appointments.length === 0) return;
@@ -40,6 +40,9 @@ const runMedicationReminders = async () => {
   let remindersSent = 0;
 
   for (const appt of appointments) {
+    // Respect patient preference — medication reminders are optional
+    if (appt.patientId?.notificationPreferences?.medicationReminder === false) continue;
+
     for (const item of appt.prescription) {
       const intervalHours = getIntervalHours(item.frequency);
       if (!intervalHours) continue;

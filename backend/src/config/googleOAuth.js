@@ -49,7 +49,7 @@ const getAuthUrl = (userId) => {
   return client.generateAuthUrl({
     access_type: "offline",   // needed to get a refresh_token
     prompt: "consent",        // forces refresh_token on every consent (avoids missing refresh_token on re-auth)
-    scope: ["https://www.googleapis.com/auth/calendar.events"],
+    scope: ["https://www.googleapis.com/auth/calendar"],
     state: userId,
   });
 };

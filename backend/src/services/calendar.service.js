@@ -89,8 +89,14 @@ const createCalendarEvents = async (appointment) => {
 };
 
 // ─── updateCalendarEvents ─────────────────────────────────────────────────────
-// Updates existing calendar events when an appointment is rescheduled.
 const updateCalendarEvents = async (appointment) => {
+  // Check patient preference — calendar update on completion is optional
+  const patient = await User.findById(appointment.patientId).select("notificationPreferences googleTokens name").lean();
+  if (patient?.notificationPreferences?.calendarUpdates === false) {
+    logger.info(`Skipping calendar update for appointment ${appointment._id} — patient opted out`);
+    return;
+  }
+
   const [patientData, doctorData] = await Promise.all([
     getCalendarForUser(appointment.patientId),
     getCalendarForUser(appointment.doctorId),
