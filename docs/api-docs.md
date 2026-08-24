@@ -209,7 +209,7 @@ Get available slots for a doctor on a specific date. Slots already held or confi
 
 ### POST `/patient/appointments/hold`
 
-Step 1 of booking. Holds a slot for 5 minutes (configurable via `HOLD_DURATION_MINUTES`). A patient can only hold one slot at a time.
+Step 1 of booking. Holds a slot for 15 minutes (configurable via `HOLD_DURATION_MINUTES`). A patient can only hold one slot at a time.
 
 **Request body:**
 ```json
@@ -228,7 +228,7 @@ Step 1 of booking. Holds a slot for 5 minutes (configurable via `HOLD_DURATION_M
     "id": "<id>",
     "slotStart": "2025-09-01T09:00:00.000Z",
     "slotEnd": "2025-09-01T09:30:00.000Z",
-    "holdExpiresAt": "2025-09-01T08:35:00.000Z",
+    "holdExpiresAt": "2025-09-01T09:15:00.000Z",
     "status": "held"
   }
 }

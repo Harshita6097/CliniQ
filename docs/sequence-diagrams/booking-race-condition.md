@@ -44,11 +44,11 @@ Patient A                    Patient B                    Backend               
 Patient                      Backend (cron — every minute)       MongoDB
     |                                    |                            |
     |── POST /appointments/hold ─────────────────────────────────────>|
-    |<── 201 { holdExpiresAt: T+5min } ──|                            |
+    |<── 201 { holdExpiresAt: T+15min } ─|                            |
     |                                    |                            |
     |   [Patient abandons symptom form]  |                            |
     |                                    |                            |
-    |                          [T+5min passes]                        |
+    |                          [T+15min passes]                       |
     |                                    |                            |
     |                          cron tick |── find held where ─────────>|
     |                                    |   holdExpiresAt <= now      |
