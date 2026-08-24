@@ -44,6 +44,7 @@ cliniq/
 │   │   ├── routes/       # auth, patient, doctor, admin, calendar
 │   │   ├── services/     # slot, llm, email, notification, calendar
 │   │   └── utils/        # logger, slotGenerator
+│   ├── tests/            # concurrency.test.js
 │   ├── .env.example
 │   └── server.js
 ├── docs/
@@ -54,6 +55,8 @@ cliniq/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/          # axiosInstance, auth.api, appointment.api, doctor.api, admin.api, calendar.api
+│   │   ├── components/
+│   │   │   └── landing/  # LandingNavbar, HeroSection, FeatureSpotlight, HowItWorks, RoleTabsCard, LandingFooter
 │   │   ├── context/      # AuthContext
 │   │   ├── hooks/        # useAuth, useAppointments, useSlots
 │   │   ├── pages/
@@ -61,9 +64,11 @@ cliniq/
 │   │   │   ├── patient/  # PatientLayout, Dashboard, BookAppointment, MyAppointments, AppointmentDetail
 │   │   │   ├── doctor/   # DoctorLayout, Dashboard, AppointmentDetail, LeaveManager
 │   │   │   ├── admin/    # AdminLayout, Dashboard, ManageDoctors, AllAppointments, Notifications
-│   │   │   └── shared/   # CalendarSettings (Google Calendar connect + notification preferences)
+│   │   │   ├── shared/   # CalendarSettings (Google Calendar connect + notification preferences)
+│   │   │   └── Landing.jsx  # Public landing page — assembles all 6 landing components
 │   │   └── utils/        # dateUtils, statusBadge
 │   └── .env.example
+├── scripts/              # concurrencyTest.js
 └── README.md
 ```
 
