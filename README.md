@@ -94,28 +94,61 @@ Fill in every value — see the [Environment Variables](#environment-variables) 
 
 ### 3. Seed the database
 
-Creates the first admin account and a sample doctor. Safe to run multiple times (idempotent).
+Two seed scripts are available:
 
+**Minimal seed** — creates one admin + one sample doctor:
 ```bash
 cd backend
 npm run seed
 ```
 
-Default credentials created:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@healthcare.local | Admin@1234 |
-| Doctor | doctor@healthcare.local | Doctor@1234 |
-
-Override defaults:
-
+**Demo seed** — creates full evaluation-ready data (recommended):
 ```bash
-node scripts/seed.js --admin-email=you@example.com --admin-password=MySecret99
-node scripts/seed.js --skip-doctor   # skip sample doctor
+cd backend
+npm run seed:demo
 ```
 
-**Change these passwords immediately after first login.**
+Both are idempotent — safe to re-run, skips existing accounts.
+
+---
+
+## Demo Credentials
+
+> All demo accounts are created by `npm run seed:demo`.
+
+### Admin
+| Email | Password |
+|-------|----------|
+| admin@cliniq.demo | Admin@1234 |
+
+### Doctors (all use password: `Doctor@1234`)
+| Name | Email | Specialization |
+|------|-------|----------------|
+| Dr. Priya Sharma | priya.sharma@cliniq.demo | Cardiologist |
+| Dr. Arjun Mehta | arjun.mehta@cliniq.demo | Dermatologist |
+| Dr. Sneha Iyer | sneha.iyer@cliniq.demo | Pediatrician |
+| Dr. Rohan Kapoor | rohan.kapoor@cliniq.demo | Orthopedic Surgeon |
+| Dr. Meera Nair | meera.nair@cliniq.demo | General Physician |
+
+### Patients (all use password: `Patient@1234`)
+| Name | Email |
+|------|-------|
+| Rahul Verma | rahul.verma@cliniq.demo |
+| Ananya Singh | ananya.singh@cliniq.demo |
+| Vikram Patel | vikram.patel@cliniq.demo |
+| Kavya Reddy | kavya.reddy@cliniq.demo |
+
+### Pre-seeded Appointments
+| Status | Patient | Doctor | Notes |
+|--------|---------|--------|-------|
+| ✅ Completed | Rahul Verma | Dr. Priya Sharma | With prescription + AI summary |
+| ✅ Completed | Ananya Singh | Dr. Arjun Mehta | With prescription + AI summary |
+| ✅ Completed | Vikram Patel | Dr. Meera Nair | With prescription + AI summary |
+| 🕐 Confirmed | Rahul Verma | Dr. Rohan Kapoor | Upcoming |
+| 🕐 Confirmed | Kavya Reddy | Dr. Sneha Iyer | Upcoming |
+| 🕐 Confirmed | Ananya Singh | Dr. Priya Sharma | Upcoming |
+| ❌ Cancelled | Vikram Patel | Dr. Rohan Kapoor | Cancelled by patient |
+| ❌ Cancelled | Kavya Reddy | Dr. Arjun Mehta | Cancelled by admin (doctor leave) |
 
 ---
 
