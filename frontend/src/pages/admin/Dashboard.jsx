@@ -99,7 +99,7 @@ export default function AdminDashboard() {
                 <li key={appt._id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-paper-dim transition-colors">
                   <div className="w-9 h-9 rounded-md bg-admin-tint flex items-center justify-center text-admin-dark font-bold text-sm shrink-0">{appt.patientId?.name?.[0] ?? 'P'}</div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink truncate">{appt.patientId?.name} → Dr. {appt.doctorId?.name}</p>
+                    <p className="text-sm font-semibold text-ink truncate">{appt.patientId?.name} → {appt.doctorId?.name}</p>
                     <p className="font-mono text-xs text-ink-soft mt-0.5">{slotLabel(appt.slotStart)}</p>
                   </div>
                   <StatusBadge status={appt.status} />

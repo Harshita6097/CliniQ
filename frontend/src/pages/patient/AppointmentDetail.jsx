@@ -90,7 +90,7 @@ export default function PatientAppointmentDetail() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="font-mono text-[10px] text-white/60 uppercase tracking-widest mb-1">Appointment</p>
-              <h1 className="font-display text-xl font-semibold">Dr. {appt.doctorId?.name}</h1>
+              <h1 className="font-display text-xl font-semibold">{appt.doctorId?.name}</h1>
               <p className="font-mono text-xs text-white/70 mt-1">{formatSlot(appt.slotStart)}</p>
             </div>
             <StatusBadge status={appt.status} />

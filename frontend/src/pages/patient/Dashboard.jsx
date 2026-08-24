@@ -62,7 +62,7 @@ export default function PatientDashboard() {
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
               </svg>
-              Next: Dr. {nextAppt.doctorId?.name} — <span className="font-mono text-xs">{slotLabel(nextAppt.slotStart)}</span>
+              Next: {nextAppt.doctorId?.name} — <span className="font-mono text-xs">{slotLabel(nextAppt.slotStart)}</span>
             </div>
           )}
           <div className="flex flex-wrap gap-3">
@@ -114,7 +114,7 @@ export default function PatientDashboard() {
                     {appt.doctorId?.name?.[0] ?? 'D'}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Dr. {appt.doctorId?.name}</p>
+                    <p className="text-sm font-semibold text-ink">{appt.doctorId?.name}</p>
                     <p className="font-mono text-xs text-ink-soft mt-0.5">{slotLabel(appt.slotStart)}</p>
                   </div>
                 </div>

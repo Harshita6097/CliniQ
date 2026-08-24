@@ -60,7 +60,7 @@ export default function AllAppointments() {
       </div>
     )},
     { key: 'doctor', label: 'Doctor', render: row => (
-      <div><p className="font-semibold text-ink text-sm">Dr. {row.doctorId?.name}</p><p className="font-mono text-[11px] text-ink-soft">{row.doctorId?.email}</p></div>
+      <div><p className="font-semibold text-ink text-sm">{row.doctorId?.name}</p><p className="font-mono text-[11px] text-ink-soft">{row.doctorId?.email}</p></div>
     )},
     { key: 'slot', label: 'Slot', render: row => <span className="font-mono text-xs text-ink">{formatSlot(row.slotStart)}</span> },
     { key: 'status', label: 'Status', render: row => <StatusBadge status={row.status} /> },
