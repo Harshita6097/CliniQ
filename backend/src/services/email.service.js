@@ -14,6 +14,7 @@ const getResend = () => {
  */
 const sendEmail = async ({ to, subject, body }) => {
   const from = process.env.EMAIL_FROM || "CliniQ <onboarding@resend.dev>";
+  if (process.env.RESEND_DEV_OVERRIDE) to = process.env.RESEND_DEV_OVERRIDE;
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:auto">
     <p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
     <hr/>
