@@ -25,7 +25,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.4",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.14",
     "resend": "^6.22.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0"

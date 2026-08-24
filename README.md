@@ -11,7 +11,7 @@
 | Database | MongoDB Atlas (Mongoose) |
 | Auth | JWT — role-based (patient / doctor / admin) |
 | LLM | Google Gemini API (gemini-3.6-flash) |
-| Email | Nodemailer (SMTP / Gmail) |
+| Email | Resend API |
 | Calendar | Google Calendar API (OAuth 2.0 per-user) |
 | Background Jobs | node-cron (hold cleanup, notification retry, reminders) |
 
@@ -62,7 +62,7 @@ cliniq/
 - Node.js 18+
 - MongoDB Atlas cluster (free tier works)
 - Gemini API key — [aistudio.google.com](https://aistudio.google.com)
-- Gmail account with an App Password (for Nodemailer)
+- Resend account + API key — [resend.com](https://resend.com) (free tier: 3000 emails/month)
 - Google Cloud project with Calendar API enabled (optional — app works without it)
 
 ---
@@ -180,16 +180,14 @@ All variables live in `backend/.env`. Copy from `backend/.env.example`.
 | `GEMINI_API_KEY` | No* | Google Gemini API key — LLM summaries fall back gracefully if missing |
 | `GEMINI_MODEL` | No | Model name (default `gemini-3.6-flash`) |
 | `LLM_TIMEOUT_MS` | No | LLM call timeout in ms (default `30000`) |
-| `SMTP_HOST` | No* | SMTP host — emails silently fail if missing |
-| `SMTP_PORT` | No | SMTP port (default `587`) |
-| `SMTP_USER` | No* | SMTP username / Gmail address |
-| `SMTP_PASS` | No* | Gmail App Password |
-| `EMAIL_FROM` | No | From display name + address |
+| `RESEND_API_KEY` | No* | Resend API key — emails silently fail if missing |
+| `EMAIL_FROM` | No | From address (default `CliniQ <onboarding@resend.dev>`) |
+| `RESEND_DEV_OVERRIDE` | No | If set, all emails are redirected to this address — useful on Resend free tier without a verified domain |
 | `GOOGLE_CLIENT_ID` | No* | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | No* | Google OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | No | OAuth callback URL (default `http://localhost:5000/api/calendar/oauth/callback`) |
 | `CLIENT_URL` | No | Frontend URL for CORS + OAuth redirects (default `http://localhost:3000`) |
-| `HOLD_DURATION_MINUTES` | No | Slot hold window in minutes (default `5`, set to `15` in this project) |
+| `HOLD_DURATION_MINUTES` | No | Slot hold window in minutes (default `5`) |
 | `MAX_NOTIFICATION_RETRIES` | No | Max email retry attempts (default `5`) |
 
 *App runs without these — the relevant feature degrades gracefully.
@@ -290,7 +288,10 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 | PATCH | `/doctors/:id` | Update doctor profile fields |
 | DELETE | `/doctors/:id` | Deactivate doctor (soft delete) |
 | POST | `/doctors/:id/leave` | Mark leave for a doctor |
+| PATCH | `/doctors/:id/reactivate` | Reactivate a deactivated doctor |
+| PATCH | `/doctors/:id/user` | Update doctor's name / email (User record) |
 | GET | `/appointments` | System-wide appointments — filters: `status`, `doctorId`, `patientId`, `from`, `to` |
+| GET | `/appointments/:id` | Single appointment detail + status history |
 | GET | `/notifications` | Notification dashboard — optional `?status=queued\|sent\|failed` |
 | GET | `/users` | All users — optional `?role=patient\|doctor` |
 | PATCH | `/users/:id/toggle-active` | Activate / deactivate any user |
@@ -491,6 +492,6 @@ Calendar integration is **optional** — the app works fully without it. Users w
 - **Outbox pattern** — Every notification is written to MongoDB first, then dispatched async. Failures are retried with exponential backoff by the cron job.
 - **Soft deletes** — Doctors are deactivated (`isActive: false`), never deleted. Appointment history is preserved.
 - **Non-blocking external calls** — LLM, email, and calendar operations are all fire-and-forget after the main transaction commits. They never block the HTTP response.
-- **Lazy service initialisation** — Gemini and Nodemailer clients are initialised on first use, so the server boots cleanly even without API keys set.
+- **Lazy service initialisation** — Gemini and Resend clients are initialised on first use, so the server boots cleanly even without API keys set.
 - **UTC slots** — `slotGenerator.js` uses `Date.UTC()` to avoid timezone issues on non-UTC servers.
 - **Notification preferences** — Confirmation and cancellation emails are always sent (mandatory). Appointment reminders, medication reminders, and calendar updates are patient-controlled via toggles in the Settings page.

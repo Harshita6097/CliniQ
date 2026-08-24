@@ -464,6 +464,37 @@ Soft-deactivate a doctor account (`isActive: false`). Appointment history is pre
 
 ---
 
+### PATCH `/admin/doctors/:id/reactivate`
+
+Reactivate a previously deactivated doctor account.
+
+**Auth:** Admin
+
+**Response `200`:**
+```json
+{ "message": "Doctor account reactivated." }
+```
+
+---
+
+### PATCH `/admin/doctors/:id/user`
+
+Update a doctor's name and/or email on the User record (separate from profile fields).
+
+**Auth:** Admin
+
+**Request body (at least one required):**
+```json
+{ "name": "Dr. New Name", "email": "newemail@example.com" }
+```
+
+**Response `200`:**
+```json
+{ "message": "Doctor user record updated.", "user": { ... } }
+```
+
+---
+
 ### POST `/admin/doctors/:id/leave`
 
 Mark leave days for a doctor (same conflict handling as doctor self-service).
@@ -484,6 +515,24 @@ System-wide appointment list with optional filters.
 **Response `200`:**
 ```json
 { "total": 42, "appointments": [ ... ] }
+```
+
+---
+
+### GET `/admin/appointments/:id`
+
+Single appointment detail with full status history and changedBy user info.
+
+**Auth:** Admin
+
+**Response `200`:**
+```json
+{
+  "appointment": { "_id": "<id>", "status": "completed", "patientId": { ... }, "doctorId": { ... } },
+  "history": [
+    { "fromStatus": "held", "toStatus": "confirmed", "changedBy": { "name": "Jane", "role": "patient" }, "timestamp": "..." }
+  ]
+}
 ```
 
 ---

@@ -1,6 +1,6 @@
 # System Design Write-up
 
-## Healthcare Appointment & Follow-up Manager
+## CliniQ — Healthcare Appointment & Follow-up Manager
 
 ---
 
@@ -66,7 +66,7 @@ If dispatch fails, the notification document is updated with:
 - `nextRetryAt` set using exponential backoff: `2^retryCount` minutes (1m, 2m, 4m, 8m, 16m)
 - `errorMessage` storing the last failure reason for admin visibility
 
-A notification retry job runs every 5 minutes, picking up all `queued` notifications whose `nextRetryAt` has elapsed and dispatching them in batches of 10 to avoid SMTP rate limits. After 5 failed attempts (`MAX_NOTIFICATION_RETRIES`), the notification is marked `failed` and removed from the retry queue. Admins can view the full notification status — queued, sent, failed, retry count, error message — from the admin dashboard.
+A notification retry job runs every 5 minutes, picking up all `queued` notifications whose `nextRetryAt` has elapsed and dispatching them in batches of 10 to avoid API rate limits. After 5 failed attempts (`MAX_NOTIFICATION_RETRIES`), the notification is marked `failed` and removed from the retry queue. Admins can view the full notification status — queued, sent, failed, retry count, error message — from the admin dashboard.
 
 Deduplication is enforced per-recipient per-appointment: before queuing a confirmation, the system checks whether a `queued` or `sent` confirmation already exists for that recipient and appointment, preventing duplicate emails if the booking flow is retried.
 
