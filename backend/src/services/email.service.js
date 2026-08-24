@@ -9,8 +9,8 @@ const getTransporter = () => {
   if (!_transporter) {
     _transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false, // STARTTLS
+      port: Number(process.env.SMTP_PORT) || 465,
+      secure: Number(process.env.SMTP_PORT) === 587 ? false : true, // SSL on 465, STARTTLS on 587
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
