@@ -1,44 +1,27 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const logger = require("../utils/logger");
 
-// Lazy-initialise transporter — same pattern as LLM service.
-// SMTP credentials only need to exist when an email is actually sent.
-let _transporter = null;
-
-const getTransporter = () => {
-  if (!_transporter) {
-    _transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 465,
-      secure: Number(process.env.SMTP_PORT) === 587 ? false : true, // SSL on 465, STARTTLS on 587
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-  return _transporter;
+let _resend = null;
+const getResend = () => {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
 };
 
 /**
- * Sends a single email.
+ * Sends a single email via Resend API (HTTPS — works on Render free tier).
  * @param {{ to: string, subject: string, body: string }} payload
- * @throws on SMTP failure — caller handles retry logic
+ * @throws on failure — caller handles retry logic
  */
 const sendEmail = async ({ to, subject, body }) => {
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM || "CliniQ <noreply@cliniq.app>",
-    to,
-    subject,
-    // body is plain text; wrap in minimal HTML for email clients
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:auto">
-      <p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
-      <hr/>
-      <small style="color:#888">CliniQ — do not reply to this email.</small>
-    </div>`,
-    text: body,
-  });
+  const from = process.env.EMAIL_FROM || "CliniQ <onboarding@resend.dev>";
+  const html = `<div style="font-family:sans-serif;max-width:600px;margin:auto">
+    <p>${body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>")}</p>
+    <hr/>
+    <small style="color:#888">CliniQ — do not reply to this email.</small>
+  </div>`;
+
+  const { error } = await getResend().emails.send({ from, to, subject, html, text: body });
+  if (error) throw new Error(error.message);
   logger.info(`Email sent to ${to} — subject: "${subject}"`);
 };
 
