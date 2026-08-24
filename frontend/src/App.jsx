@@ -29,6 +29,7 @@ import Notifications            from './pages/admin/Notifications';
 
 // Shared pages
 import CalendarSettings from './pages/shared/CalendarSettings';
+import Landing         from './pages/Landing';
 
 const ProtectedRoute = ({ allowedRole }) => {
   const { isAuthenticated, user } = useAuth();
@@ -37,17 +38,12 @@ const ProtectedRoute = ({ allowedRole }) => {
   return <Outlet />;
 };
 
-const RootRedirect = () => {
-  const { isAuthenticated, user } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={`/${user.role}`} replace />;
-};
-
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public */}
+        <Route path="/"        element={<Landing />} />
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -86,8 +82,7 @@ export default function App() {
         </Route>
 
         {/* Fallback */}
-        <Route path="/"  element={<RootRedirect />} />
-        <Route path="*"  element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
