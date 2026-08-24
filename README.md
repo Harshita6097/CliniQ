@@ -49,6 +49,7 @@ cliniq/
 ├── docs/
 │   ├── sequence-diagrams/ # booking-race-condition.md
 │   ├── system-design.md  # double-booking, leave conflicts, slot hold, notification reliability
+│   ├── db-schema.md      # full MongoDB schema — all 5 models, indexes, relationships
 │   └── api-docs.md       # full endpoint reference
 ├── frontend/
 │   ├── src/
@@ -495,6 +496,7 @@ Calendar integration is **optional** — the app works fully without it. Users w
 ## Further Documentation
 
 - [System Design Write-up](docs/system-design.md) — double-booking prevention, leave conflict handling, slot hold mechanism, notification failure handling
+- [Database Schema](docs/db-schema.md) — all 5 models, indexes, sub-schemas, and relationships
 - [API Documentation](docs/api-docs.md) — full endpoint reference with request/response examples
 
 ---
