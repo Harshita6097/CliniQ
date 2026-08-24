@@ -2,8 +2,14 @@
 
 ## Base URL
 
+**Local:**
 ```
 http://localhost:5000/api
+```
+
+**Hosted (Render):**
+```
+https://cliniq-backend-odd7.onrender.com/api
 ```
 
 All protected routes require a JWT token in the Authorization header:
@@ -203,7 +209,7 @@ Get available slots for a doctor on a specific date. Slots already held or confi
 
 ### POST `/patient/appointments/hold`
 
-Step 1 of booking. Holds a slot for 15 minutes. A patient can only hold one slot at a time.
+Step 1 of booking. Holds a slot for 5 minutes (configurable via `HOLD_DURATION_MINUTES`). A patient can only hold one slot at a time.
 
 **Request body:**
 ```json

@@ -2,6 +2,18 @@
 
 > Full-stack healthcare appointment platform with patient, doctor, and admin portals.
 
+## Live Demo
+
+| | URL |
+|---|---|
+| Frontend | https://cliniq-ochre.vercel.app |
+| Backend API | https://cliniq-backend-odd7.onrender.com |
+| Health check | https://cliniq-backend-odd7.onrender.com/health |
+
+> **Note:** Backend is on Render free tier — it may take 30–60 seconds to wake up on first request.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -22,7 +34,7 @@
 ```
 cliniq/
 ├── backend/
-│   ├── scripts/          # seed.js — first admin + sample doctor
+│   ├── scripts/          # seed.js, seedDemo.js, resetNotifications.js
 │   ├── src/
 │   │   ├── config/       # db.js, googleOAuth.js
 │   │   ├── controllers/  # auth, appointment, doctor, admin
@@ -35,6 +47,7 @@ cliniq/
 │   ├── .env.example
 │   └── server.js
 ├── docs/
+│   ├── sequence-diagrams/ # booking-race-condition.md
 │   ├── system-design.md  # double-booking, leave conflicts, slot hold, notification reliability
 │   └── api-docs.md       # full endpoint reference
 ├── frontend/
@@ -232,7 +245,7 @@ Response: `{ "token": "...", "user": { "id", "name", "email", "role" } }`
 |--------|------|-------------|
 | GET | `/doctors` | List doctors, optional `?specialization=` filter |
 | GET | `/doctors/:doctorId/slots` | Available slots — requires `?date=YYYY-MM-DD` |
-| POST | `/appointments/hold` | Step 1 — hold a slot (15-min window) |
+| POST | `/appointments/hold` | Step 1 — hold a slot (5-min window, configurable) |
 | POST | `/appointments/:id/confirm` | Step 2 — submit symptoms, confirm booking |
 | DELETE | `/appointments/:id` | Cancel an appointment |
 | GET | `/appointments` | List own appointments, optional `?status=` filter |

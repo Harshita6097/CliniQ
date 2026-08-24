@@ -17,7 +17,7 @@ partialFilterExpression: { status: { $in: ["held", "confirmed"] } }
 
 This index enforces that only one document with a given `(doctorId, slotStart)` pair can exist in the `held` or `confirmed` state at any time. `cancelled` and `completed` appointments are excluded from the index so the same slot can be re-booked after a cancellation.
 
-Booking follows a two-step flow. In step one, the patient holds a slot — this creates a `held` appointment document inside a MongoDB transaction. If two requests arrive simultaneously for the same slot, MongoDB's index rejects the second insert with a duplicate key error (code 11000), which the error handler converts to a user-friendly "Slot no longer available" response. No application-level locking, no race condition. In step two, the patient submits their symptom form within a 15-minute window, transitioning the appointment from `held` to `confirmed`. If the window expires, a background job (running every minute) finds all `held` appointments past their `holdExpiresAt` timestamp and cancels them, freeing the slot.
+Booking follows a two-step flow. In step one, the patient holds a slot — this creates a `held` appointment document inside a MongoDB transaction. If two requests arrive simultaneously for the same slot, MongoDB's index rejects the second insert with a duplicate key error (code 11000), which the error handler converts to a user-friendly "Slot no longer available" response. No application-level locking, no race condition. In step two, the patient submits their symptom form within a 5-minute window (configurable via `HOLD_DURATION_MINUTES`), transitioning the appointment from `held` to `confirmed`. If the window expires, a background job (running every minute) finds all `held` appointments past their `holdExpiresAt` timestamp and cancels them, freeing the slot.
 
 ---
 
@@ -44,7 +44,7 @@ Past dates are rejected at the validation layer — a doctor cannot mark leave f
 
 The hold mechanism solves a UX problem: a patient needs time to fill in their symptom form before the booking is finalised, but the slot should not be available to other patients during that time.
 
-When a patient selects a slot, the system immediately creates a `held` appointment with a `holdExpiresAt` timestamp set 15 minutes in the future (configurable via `HOLD_DURATION_MINUTES`). This is done inside a MongoDB transaction so the status history record is written atomically with the appointment.
+When a patient selects a slot, the system immediately creates a `held` appointment with a `holdExpiresAt` timestamp set 5 minutes in the future (configurable via `HOLD_DURATION_MINUTES`). This is done inside a MongoDB transaction so the status history record is written atomically with the appointment.
 
 A patient can only hold one slot at a time — the system checks for an existing `held` appointment before creating a new one, preventing a patient from locking multiple slots simultaneously.
 
